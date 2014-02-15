@@ -3,10 +3,9 @@ package telekinesis.message.internal;
 import java.nio.ByteBuffer;
 
 import telekinesis.message.FromWire;
-import telekinesis.message.Header;
 import telekinesis.message.ToWire;
 
-public class SimpleHeader implements Header, FromWire, ToWire {
+public class SimpleHeader implements FromWire, ToWire {
 
     private long sourceJobId = -1L;
     private long targetJobId = -1L;
@@ -27,14 +26,14 @@ public class SimpleHeader implements Header, FromWire, ToWire {
         this.targetJobId = targetJobId;
     }
 
-    public void fromWire(ByteBuffer msgBuf) {
-        sourceJobId = msgBuf.getLong();
-        targetJobId = msgBuf.getLong();
+    public void deserialize(ByteBuffer buf) {
+        sourceJobId = buf.getLong();
+        targetJobId = buf.getLong();
     }
 
-    public void toWire(ByteBuffer msgBuf) {
-        msgBuf.putLong(sourceJobId);
-        msgBuf.putLong(targetJobId);
+    public void serialize(ByteBuffer buf) {
+        buf.putLong(sourceJobId);
+        buf.putLong(targetJobId);
     }
     
 }

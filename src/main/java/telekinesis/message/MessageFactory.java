@@ -1,8 +1,6 @@
 package telekinesis.message;
 
-import java.lang.reflect.Constructor;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -13,6 +11,8 @@ import org.slf4j.LoggerFactory;
 import telekinesis.message.annotations.RegisterMessage;
 import telekinesis.model.EMsg;
 
+import com.google.protobuf.GeneratedMessage;
+
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class MessageFactory {
 
@@ -21,11 +21,13 @@ public class MessageFactory {
     private static final Map<EMsg, Def> REGISTRY;
     
     private static class Def {
-        private final Class<? extends Header> headerClass;
         private final Class<? extends Message> msgClass;
-        public Def(Class<? extends Header> headerClass, Class<? extends Message> msgClass) {
-            this.headerClass = headerClass;
+        private final Class<?> headerClass;
+        private final Class<?> bodyClass;
+        public Def(Class<? extends Message> msgClass, Class<?> headerClass, Class<?> bodyClass) {
             this.msgClass = msgClass;
+            this.headerClass = headerClass;
+            this.bodyClass = bodyClass;
         }
     }
     
@@ -34,7 +36,17 @@ public class MessageFactory {
         Reflections reflections = new Reflections(MessageFactory.class.getPackage().getName());
         for(Class<?> clazz : reflections.getTypesAnnotatedWith(RegisterMessage.class)) {
             RegisterMessage mb = clazz.getAnnotation(RegisterMessage.class);
-            REGISTRY.put(mb.type(), new Def(mb.headerClass(), (Class<? extends Message>)clazz));
+            REGISTRY.put(mb.type(), new Def((Class<? extends Message>)clazz, mb.headerClass(), mb.bodyClass()));
+        }
+    }
+    
+    private static Object instantiate(Class clazz) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, InstantiationException {
+        if (GeneratedMessage.class.isAssignableFrom(clazz)) {
+            return null;
+        } else if (GeneratedMessage.Builder.class.isAssignableFrom(clazz)) {
+            return clazz.getEnclosingClass().getMethod("newInstance").invoke(null);
+        } else {
+            return clazz.newInstance();
         }
     }
 
@@ -47,24 +59,14 @@ public class MessageFactory {
         }
         M msg = null;
         try {
-            Constructor<? extends Message> c = def.msgClass.getConstructor(EMsg.class, Class.class);
-            msg = (M) c.newInstance(type, def.headerClass);
+            msg = (M) def.msgClass.newInstance();
+            msg.setType(type);
+            msg.setHeader(instantiate(def.headerClass));
+            msg.setBody(instantiate(def.bodyClass));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
         return msg;
     }
-    
-    
-    public static <M extends Message> M fromByteArray(byte[] data) {
-        ByteBuffer msgBuf = ByteBuffer.wrap(data);
-        msgBuf.order(ByteOrder.LITTLE_ENDIAN);
-        EMsg type = EMsg.f(msgBuf.getInt());
-        M msg = forType(type);
-        if (msg != null) {
-            ((FromWire) msg).fromWire(msgBuf);
-        }
-        return msg;
-    };
-    
+        
 }

@@ -2,18 +2,14 @@ package telekinesis.message;
 
 import telekinesis.model.EMsg;
 
-public class Message<H extends Header> {
+public abstract class Message<H, B> implements FromWire, ToWire {
 
-    private final EMsg type;
-    private final H header;
+    private EMsg type;
+    private H header;
+    private B body;
 
-    public Message(EMsg type, Class<H> headerClass) {
+    public void setType(EMsg type) {
         this.type = type;
-        try {
-            this.header = headerClass.newInstance();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 
     public EMsg getType() {
@@ -24,4 +20,16 @@ public class Message<H extends Header> {
         return header;
     }
 
+    public void setHeader(H header) {
+        this.header = header;
+    }
+    
+    public B getBody() {
+        return body;
+    }
+
+    public void setBody(B body) {
+        this.body = body;
+    }
+    
 }
