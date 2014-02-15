@@ -20,6 +20,8 @@ import org.xnio.conduits.ConduitStreamSourceChannel;
 
 import telekinesis.message.Message;
 import telekinesis.message.MessageFactory;
+import telekinesis.message.MessageHandler;
+import telekinesis.message.internal.ChannelEncryptRequest;
 import telekinesis.model.EMsg;
 
 public class Connection {
@@ -69,7 +71,7 @@ public class Connection {
     }
     
     private void handleReceive(byte[] data) {
-        Message msg = MessageFactory.build(data);
+        Message<?> msg = MessageFactory.fromByteArray(data);
         if (msg.getType() == EMsg.ChannelEncryptRequest) {
             log.debug("YEA!");
         }
@@ -137,6 +139,11 @@ public class Connection {
             } catch (IOException e) {
                 ChannelListeners.closingChannelExceptionHandler().handleException(channel, e);
             }
+        }
+    };
+    
+    final MessageHandler<ChannelEncryptRequest> encryptRequestHandler = new MessageHandler<ChannelEncryptRequest>() {
+        public void handleMessage(ChannelEncryptRequest message) {
         }
     };
 

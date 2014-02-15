@@ -2,28 +2,26 @@ package telekinesis.message;
 
 import telekinesis.model.EMsg;
 
-public class Message {
+public class Message<H extends Header> {
 
     private final EMsg type;
-    private final Header header;
-    private final Body body;
-    
-    public Message(EMsg type, Header header, Body body) {
+    private final H header;
+
+    public Message(EMsg type, Class<H> headerClass) {
         this.type = type;
-        this.header = header;
-        this.body = body;
+        try {
+            this.header = headerClass.newInstance();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
-    
+
     public EMsg getType() {
         return type;
     }
 
-    public Header getHeader() {
+    public H getHeader() {
         return header;
     }
-    
-    public Body getBody() {
-        return body;
-    }
-    
+
 }

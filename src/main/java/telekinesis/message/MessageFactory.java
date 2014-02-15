@@ -1,5 +1,6 @@
 package telekinesis.message;
 
+import java.lang.reflect.Constructor;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.HashMap;
@@ -9,58 +10,61 @@ import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import telekinesis.message.annotations.MessageBody;
+import telekinesis.message.annotations.RegisterMessage;
 import telekinesis.model.EMsg;
 
+@SuppressWarnings({"unchecked", "rawtypes"})
 public class MessageFactory {
 
     private static final Logger log = LoggerFactory.getLogger(MessageFactory.class);
+
+    private static final Map<EMsg, Def> REGISTRY;
     
     private static class Def {
-        private final EMsg type;
         private final Class<? extends Header> headerClass;
-        private final Class<? extends Body> bodyClass;
-        public Def(EMsg type, Class<? extends Header> headerClass, Class<? extends Body> bodyClass) {
-            this.type = type;
+        private final Class<? extends Message> msgClass;
+        public Def(Class<? extends Header> headerClass, Class<? extends Message> msgClass) {
             this.headerClass = headerClass;
-            this.bodyClass = bodyClass;
+            this.msgClass = msgClass;
         }
     }
-    
-    private static final Map<EMsg, Def> REGISTRY;
     
     static {
         REGISTRY = new HashMap<EMsg, Def>();
         Reflections reflections = new Reflections(MessageFactory.class.getPackage().getName());
-        for(Class<?> clazz : reflections.getTypesAnnotatedWith(MessageBody.class)) {
-            MessageBody mb = clazz.getAnnotation(MessageBody.class);
-            REGISTRY.put(mb.type(), new Def(mb.type(), mb.headerClass(), (Class<? extends Body>)clazz));
+        for(Class<?> clazz : reflections.getTypesAnnotatedWith(RegisterMessage.class)) {
+            RegisterMessage mb = clazz.getAnnotation(RegisterMessage.class);
+            REGISTRY.put(mb.type(), new Def(mb.headerClass(), (Class<? extends Message>)clazz));
         }
     }
+
     
-    public static Message build(byte[] data) {
-        ByteBuffer msgBuf = ByteBuffer.wrap(data);
-        msgBuf.order(ByteOrder.LITTLE_ENDIAN);
-        EMsg type = EMsg.f(msgBuf.getInt());
+    public static Message<?> forType(EMsg type) {
         Def def = REGISTRY.get(type);
         if (def == null) {
             log.debug("no message definition for type {}", type);
             return null;
         }
-        Header header = null;
+        Message msg = null;
         try {
-            header = (Header) def.headerClass.newInstance();
-            ((FromWire) header).fromWire(msgBuf);
+            Constructor<? extends Message> c = def.msgClass.getConstructor(EMsg.class, Class.class);
+            msg = c.newInstance(type, def.headerClass);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        Body body = null;
-        try {
-            body = (Body) def.bodyClass.newInstance();
-            ((FromWire) body).fromWire(msgBuf);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        return msg;
+    }
+    
+    
+    public static Message<?> fromByteArray(byte[] data) {
+        ByteBuffer msgBuf = ByteBuffer.wrap(data);
+        msgBuf.order(ByteOrder.LITTLE_ENDIAN);
+        EMsg type = EMsg.f(msgBuf.getInt());
+        Message msg = forType(type);
+        if (msg != null) {
+            ((FromWire) msg).fromWire(msgBuf);
         }
-        return new Message(type, header, body);
+        return msg;
     };
+    
 }

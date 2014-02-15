@@ -2,17 +2,21 @@ package telekinesis.message.internal;
 
 import java.nio.ByteBuffer;
 
-import telekinesis.message.Body;
+import telekinesis.message.Message;
 import telekinesis.message.FromWire;
-import telekinesis.message.annotations.MessageBody;
+import telekinesis.message.annotations.RegisterMessage;
 import telekinesis.model.EMsg;
 import telekinesis.model.EUniverse;
 
-@MessageBody(type=EMsg.ChannelEncryptRequest, headerClass=SimpleHeader.class)
-public class ChannelEncryptRequestBody implements Body, FromWire {
+@RegisterMessage(type=EMsg.ChannelEncryptRequest, headerClass=SimpleHeader.class)
+public class ChannelEncryptRequest extends Message<SimpleHeader> implements FromWire {
     
     private int protocolVersion = 1;
     private EUniverse universe;
+    
+    public ChannelEncryptRequest(EMsg type, Class<SimpleHeader> headerClass) {
+        super(type, headerClass);
+    }
     
     public int getProtocolVersion() {
         return protocolVersion;
@@ -31,6 +35,7 @@ public class ChannelEncryptRequestBody implements Body, FromWire {
     }
 
     public void fromWire(ByteBuffer msgBuf) {
+        getHeader().fromWire(msgBuf);
         protocolVersion = msgBuf.getInt();
         universe = EUniverse.f(msgBuf.getInt());
     }
