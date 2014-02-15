@@ -1,4 +1,4 @@
-package telekinesis.connection;
+package telekinesis.crypto;
 
 import java.util.HashMap;
 import java.util.Map;

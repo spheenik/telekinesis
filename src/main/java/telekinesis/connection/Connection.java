@@ -4,8 +4,13 @@ import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.security.GeneralSecurityException;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
+
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,65 +23,92 @@ import org.xnio.XnioWorker;
 import org.xnio.conduits.ConduitStreamSinkChannel;
 import org.xnio.conduits.ConduitStreamSourceChannel;
 
+import telekinesis.crypto.CryptoHelper;
+import telekinesis.crypto.KeyDictionary;
+import telekinesis.crypto.RSACrypto;
+import telekinesis.message.FromWire;
 import telekinesis.message.Message;
 import telekinesis.message.MessageFactory;
 import telekinesis.message.MessageHandler;
+import telekinesis.message.ToWire;
 import telekinesis.message.internal.ChannelEncryptRequest;
+import telekinesis.message.internal.ChannelEncryptResponse;
+import telekinesis.message.internal.ChannelEncryptResult;
 import telekinesis.model.EMsg;
+import telekinesis.model.EResult;
 
 public class Connection {
 
+    private static final int MAGIC = 0x31305456; // "VT01"
+
     private final Logger log = LoggerFactory.getLogger(getClass());
-    
+
     private final SocketAddress address;
-    
-    private final BlockingDeque<byte[]> out = new LinkedBlockingDeque<byte[]>();
-    
+
+    private final BlockingDeque<ByteBuffer> out = new LinkedBlockingDeque<ByteBuffer>();
+
     private ConnectionState connectionState = ConnectionState.DISCONNECTED;
-    private StreamConnection channel; 
-    private ByteBuffer readBuf = ByteBuffer.allocate(2048);
-    private ByteBuffer writeBuf = ByteBuffer.allocate(2048);
+    private StreamConnection channel;
+    private ByteBuffer readBuf = null;
+    private ByteBuffer writeBuf = null;
+
+    private byte[] sessionKey = null;
+    private boolean encryptionActive = false;
 
     public Connection(SocketAddress address) {
         this.address = address;
     }
-    
-    private void initBufs() {
-        readBuf.order(ByteOrder.LITTLE_ENDIAN);
-        writeBuf.order(ByteOrder.LITTLE_ENDIAN);
-        readBuf.clear();
-        writeBuf.clear();
-        writeBuf.flip();
+
+    private ByteBuffer getNewBuffer() {
+        ByteBuffer result = ByteBuffer.allocate(2048);
+        result.order(ByteOrder.LITTLE_ENDIAN);
+        return result;
     }
-    
+
+    private void initBufs() {
+        readBuf = getNewBuffer();
+        writeBuf = null;
+    }
+
     public void connect() throws IOException {
         initBufs();
         XnioWorker worker = Xnio.getInstance().createWorker(OptionMap.EMPTY);
         worker.openStreamConnection(address, openListener, OptionMap.EMPTY);
         connectionState = ConnectionState.CONNECTING;
     }
-    
+
     public void disconnect() throws IOException {
         connectionState = ConnectionState.DISCONNECTING;
         channel.getSourceChannel().shutdownReads();
         channel.getSinkChannel().shutdownWrites();
         channel.getSinkChannel().flush();
     }
-    
-    public void send(byte[] data) throws IOException {
-        out.add(data);
+
+    private MessageCodec getCodec() {
+        return encryptionActive ? encryptionCodec : plainTextCodec;
+    }
+
+    public void send(Message<?> msg) {
+        ByteBuffer msgBuf = getNewBuffer();
+        msgBuf.position(4);
+        msgBuf.putInt(MAGIC);
+        getCodec().toWire(msg, msgBuf);
+        msgBuf.putInt(0, msgBuf.position() - 8);
+        msgBuf.flip();
+        out.add(msgBuf);
         if (!channel.getSinkChannel().isWriteResumed()) {
             channel.getSinkChannel().resumeWrites();
         }
     }
-    
-    private void handleReceive(byte[] data) {
-        Message<?> msg = MessageFactory.fromByteArray(data);
+
+    private void handleReceive(Message<?> msg) {
         if (msg.getType() == EMsg.ChannelEncryptRequest) {
-            log.debug("YEA!");
+            encryptRequestHandler.handleMessage((ChannelEncryptRequest) msg);
+        } else if (msg.getType() == EMsg.ChannelEncryptResult) {
+            encryptResultHandler.handleMessage((ChannelEncryptResult) msg);
         }
     }
-    
+
     private final ChannelListener<StreamConnection> openListener = new ChannelListener<StreamConnection>() {
         public void handleEvent(StreamConnection channel) {
             log.info("connection to {} established", channel.getPeerAddress());
@@ -88,15 +120,15 @@ public class Connection {
             channel.getSinkChannel().setWriteListener(writeListener);
         }
     };
-    
+
     private final ChannelListener<StreamConnection> closeListener = new ChannelListener<StreamConnection>() {
         public void handleEvent(StreamConnection channel) {
             log.info("connection to {} {}", channel.getPeerAddress(), connectionState == ConnectionState.DISCONNECTING ? "closed" : "lost");
             connectionState = ConnectionState.DISCONNECTED;
             channel.getWorker().shutdown();
-        }                
+        }
     };
-    
+
     final ChannelListener<ConduitStreamSourceChannel> readListener = new ChannelListener<ConduitStreamSourceChannel>() {
         public void handleEvent(ConduitStreamSourceChannel channel) {
             try {
@@ -105,12 +137,15 @@ public class Connection {
                     int len = readBuf.getInt(0);
                     if (readBuf.position() >= len + 8) {
                         log.info("packet with length {} received", len);
-                        byte[] data = new byte[len];
+                        if (readBuf.getInt(4) != MAGIC) {
+                            throw new IOException("packet from the server doesn't contain proper MAGIC");
+                        }
                         readBuf.flip();
+                        log.trace("received data: {}", Util.convertByteBufferToString(readBuf, len + 8));
                         readBuf.position(8);
-                        readBuf.get(data);
+                        Message<?> m = getCodec().fromWire(readBuf);
                         readBuf.compact();
-                        handleReceive(data);
+                        handleReceive(m);
                     }
                 }
                 if (n == -1) {
@@ -121,18 +156,18 @@ public class Connection {
             }
         }
     };
-    
+
     final ChannelListener<ConduitStreamSinkChannel> writeListener = new ChannelListener<ConduitStreamSinkChannel>() {
         public void handleEvent(ConduitStreamSinkChannel channel) {
             try {
-                if (writeBuf.remaining() == 0) {
+                if (writeBuf == null || writeBuf.remaining() == 0) {
                     if (out.isEmpty()) {
+                        writeBuf = null;
                         channel.suspendWrites();
                         return;
                     } else {
-                        writeBuf.clear();
-                        writeBuf.put(out.remove());
-                        writeBuf.flip();
+                        writeBuf = out.remove();
+                        log.trace("sending data: {}", Util.convertByteBufferToString(writeBuf, writeBuf.limit()));
                     }
                     channel.write(writeBuf);
                 }
@@ -141,9 +176,100 @@ public class Connection {
             }
         }
     };
-    
+
     final MessageHandler<ChannelEncryptRequest> encryptRequestHandler = new MessageHandler<ChannelEncryptRequest>() {
         public void handleMessage(ChannelEncryptRequest message) {
+            log.info("got encryption request for universe {}, protocol version {}", message.getUniverse(), message.getProtocolVersion());
+            sessionKey = CryptoHelper.GenerateRandomBlock(32);
+            ChannelEncryptResponse resp = MessageFactory.forType(EMsg.ChannelEncryptResponse);
+            resp.setProtocolVersion(message.getProtocolVersion());
+            resp.setKey(new RSACrypto(KeyDictionary.getPublicKey(message.getUniverse())).encrypt(sessionKey));
+            send(resp);
+        }
+    };
+
+    final MessageHandler<ChannelEncryptResult> encryptResultHandler = new MessageHandler<ChannelEncryptResult>() {
+        public void handleMessage(ChannelEncryptResult message) {
+            if (message.getResult() == EResult.OK) {
+                log.info("encryption established");
+                encryptionActive = true;
+            } else {
+                log.error("failed to establish encryption, server said '{}'", message.getResult());
+            }
+        }
+    };
+
+    final MessageCodec plainTextCodec = new MessageCodec() {
+
+        public void toWire(Message<?> msg, ByteBuffer dstBuf) {
+            dstBuf.putInt(msg.getType().v());
+            ((ToWire) msg).toWire(dstBuf);
+        }
+
+        public Message<?> fromWire(ByteBuffer srcBuf) {
+            EMsg type = EMsg.f(srcBuf.getInt());
+            Message<?> msg = MessageFactory.forType(type);
+            if (msg != null) {
+                ((FromWire) msg).fromWire(srcBuf);
+            }
+            return msg;
+        }
+    };
+
+    final MessageCodec encryptionCodec = new MessageCodec() {
+
+        public void toWire(Message<?> msg, ByteBuffer dstBuf) {
+            try {
+                // encrypt iv using ECB and provided key
+                Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding", "BC");
+                cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(sessionKey, "AES"));
+                // generate iv
+                final byte[] iv = CryptoHelper.GenerateRandomBlock(16);
+                // encode iv
+                dstBuf.put(cipher.doFinal(iv));
+                // encrypt input plaintext with CBC using the generated
+                // (plaintext) IV and the provided key
+                cipher = Cipher.getInstance("AES/CBC/PKCS7Padding", "BC");
+                cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(sessionKey, "AES"), new IvParameterSpec(iv));
+                // generate plaintext message buf
+                ByteBuffer srcBuf = getNewBuffer();
+                srcBuf.putInt(msg.getType().v());
+                ((ToWire) msg).toWire(srcBuf);
+                // encode message
+                cipher.doFinal(srcBuf, dstBuf);
+            } catch (GeneralSecurityException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        public Message<?> fromWire(ByteBuffer srcBuf) {
+            try {
+                // first 16 bytes of input is the ECB encrypted IV
+                byte[] iv = new byte[16];
+                byte[] cryptedIv = new byte[16];
+                srcBuf.get(cryptedIv);
+
+                // decrypt the IV using ECB
+                Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding", "BC");
+                cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(sessionKey, "AES"));
+                iv = cipher.doFinal(cryptedIv);
+
+                // decrypt the remaining ciphertext in cbc with the decrypted IV
+                cipher = Cipher.getInstance("AES/CBC/PKCS7Padding", "BC");
+                cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(sessionKey, "AES"), new IvParameterSpec(iv));
+                ByteBuffer dstBuf = getNewBuffer();
+                cipher.doFinal(srcBuf, dstBuf);
+
+                // construct message
+                EMsg type = EMsg.f(dstBuf.getInt());
+                Message<?> msg = MessageFactory.forType(type);
+                if (msg != null) {
+                    ((FromWire) msg).fromWire(dstBuf);
+                }
+                return msg;
+            } catch (GeneralSecurityException e) {
+                throw new RuntimeException(e);
+            }
         }
     };
 

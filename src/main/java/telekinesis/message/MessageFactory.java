@@ -39,16 +39,16 @@ public class MessageFactory {
     }
 
     
-    public static Message<?> forType(EMsg type) {
+    public static <M extends Message> M forType(EMsg type) {
         Def def = REGISTRY.get(type);
         if (def == null) {
             log.debug("no message definition for type {}", type);
             return null;
         }
-        Message msg = null;
+        M msg = null;
         try {
             Constructor<? extends Message> c = def.msgClass.getConstructor(EMsg.class, Class.class);
-            msg = c.newInstance(type, def.headerClass);
+            msg = (M) c.newInstance(type, def.headerClass);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -56,11 +56,11 @@ public class MessageFactory {
     }
     
     
-    public static Message<?> fromByteArray(byte[] data) {
+    public static <M extends Message> M fromByteArray(byte[] data) {
         ByteBuffer msgBuf = ByteBuffer.wrap(data);
         msgBuf.order(ByteOrder.LITTLE_ENDIAN);
         EMsg type = EMsg.f(msgBuf.getInt());
-        Message msg = forType(type);
+        M msg = forType(type);
         if (msg != null) {
             ((FromWire) msg).fromWire(msgBuf);
         }
