@@ -2,6 +2,8 @@ package telekinesis.model;
 
 import java.util.HashMap;
 
+import telekinesis.message.Message;
+
 public enum EMsg {
 	Invalid(0),
 	Multi(1),
@@ -1292,6 +1294,6 @@ public enum EMsg {
 	}
 
 	public static EMsg f(int code) {
-		return EMsg.values.get(code);
+		return EMsg.values.get(code & Message.EMsgMask);
 	}
 }

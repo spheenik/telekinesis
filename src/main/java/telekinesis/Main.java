@@ -12,7 +12,7 @@ public class Main {
         //Connection c = new Connection(new InetSocketAddress("schrodt.org", 22));
         Connection c = new Connection(new InetSocketAddress("146.66.152.12", 27017));
         c.connect();
-        Thread.sleep(2000);
+        Thread.sleep(5000);
         c.disconnect();
     }
 }

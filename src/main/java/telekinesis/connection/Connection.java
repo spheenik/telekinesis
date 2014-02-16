@@ -9,6 +9,7 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.zip.ZipInputStream;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
@@ -29,13 +30,18 @@ import org.xnio.conduits.ConduitStreamSourceChannel;
 import telekinesis.crypto.KeyDictionary;
 import telekinesis.crypto.RSACrypto;
 import telekinesis.message.Message;
-import telekinesis.message.MessageFactory;
 import telekinesis.message.MessageHandler;
 import telekinesis.message.internal.ChannelEncryptRequest;
 import telekinesis.message.internal.ChannelEncryptResponse;
 import telekinesis.message.internal.ChannelEncryptResult;
+import telekinesis.message.proto.ClientLogon;
+import telekinesis.message.proto.ClientLogonResponse;
+import telekinesis.message.proto.Multi;
+import telekinesis.model.EAccountType;
 import telekinesis.model.EMsg;
 import telekinesis.model.EResult;
+import telekinesis.model.EUniverse;
+import telekinesis.model.SteamID;
 
 public class Connection {
 
@@ -65,7 +71,7 @@ public class Connection {
     }
 
     private ByteBuffer getNewBuffer() {
-        ByteBuffer result = ByteBuffer.allocate(2048);
+        ByteBuffer result = ByteBuffer.allocate(16384);
         result.order(ByteOrder.LITTLE_ENDIAN);
         return result;
     }
@@ -107,10 +113,16 @@ public class Connection {
     }
 
     private void handleReceive(Message<?, ?> msg) {
-        if (msg.getType() == EMsg.ChannelEncryptRequest) {
+        if (msg.getEMsg() == EMsg.ChannelEncryptRequest) {
             encryptRequestHandler.handleMessage((ChannelEncryptRequest) msg);
-        } else if (msg.getType() == EMsg.ChannelEncryptResult) {
+        } else if (msg.getEMsg() == EMsg.ChannelEncryptResult) {
             encryptResultHandler.handleMessage((ChannelEncryptResult) msg);
+        } else if (msg.getEMsg() == EMsg.ClientLogOnResponse) {
+            logonResultHandler.handleMessage((ClientLogonResponse) msg);
+        } else if (msg.getEMsg() == EMsg.Multi) {
+            multiHandler.handleMessage((Multi) msg);
+        } else { 
+           log.info("unhandled message:\nHEADER:\n{}\nBODY:\n{}", msg.getHeader(), msg.getBody());
         }
     }
 
@@ -146,7 +158,7 @@ public class Connection {
                             throw new IOException("packet from the server doesn't contain proper MAGIC");
                         }
                         readBuf.flip();
-                        log.info("received data: {}", Util.convertByteBufferToString(readBuf, len + 8));
+                        log.trace("received data: {}", Util.convertByteBufferToString(readBuf, len + 8));
                         readBuf.position(8);
                         Message<?, ?> m = getCodec().fromWire(readBuf);
                         readBuf.compact();
@@ -172,7 +184,7 @@ public class Connection {
                         return;
                     } else {
                         writeBuf = out.remove();
-                        log.info("sending data: {}", Util.convertByteBufferToString(writeBuf, writeBuf.limit()));
+                        log.trace("sending data: {}", Util.convertByteBufferToString(writeBuf, writeBuf.limit()));
                     }
                     channel.write(writeBuf);
                 }
@@ -187,7 +199,7 @@ public class Connection {
             log.info("got encryption request for universe {}, protocol version {}", message.getBody().getUniverse(), message.getBody().getProtocolVersion());
             sessionKey = new byte[32];
             rng.nextBytes(sessionKey);
-            ChannelEncryptResponse resp = MessageFactory.forType(EMsg.ChannelEncryptResponse);
+            ChannelEncryptResponse resp = Message.forEMsg(EMsg.ChannelEncryptResponse);
             resp.getBody().setProtocolVersion(message.getBody().getProtocolVersion());
             resp.getBody().setKey(new RSACrypto(KeyDictionary.getPublicKey(message.getBody().getUniverse())).encrypt(sessionKey));
             send(resp);
@@ -199,24 +211,92 @@ public class Connection {
             if (message.getBody().getResult() == EResult.OK) {
                 log.info("encryption established");
                 encryptionActive = true;
+                
+                ClientLogon lm = Message.forEMsg(EMsg.ClientLogon);
+                lm.getHeader().setJobidSource(1L);
+                lm.getHeader().setClientSessionid(0);
+                lm.getHeader().setSteamid(new SteamID(0, EUniverse.Public, EAccountType.Individual).convertToLong());
+
+                //lm.getBody().setObfustucatedPrivateIp(ByteBuffer.wrap(((InetSocketAddress) channel.getLocalAddress()).getAddress().getAddress()).getInt() & 0xBAADF00D);
+                
+                lm.getBody().setAccountName("telekinesis_bot");
+                lm.getBody().setPassword("SECRET");
+                
+                lm.getBody().setProtocolVersion(65575);
+                
+//                log.info("{}", lm.getHeader().build());
+//                log.info("{}", lm.getBody().build());
+//                
+//                ByteBuffer msgBuf = getNewBuffer();
+//                msgBuf.position(4);
+//                msgBuf.putInt(MAGIC);
+//                //plainTextCodec.toWire(lm, msgBuf);
+//                encryptionCodec.toWire(lm, msgBuf);
+//                msgBuf.putInt(0, msgBuf.position() - 8);
+//                msgBuf.flip();
+//                log.info("sending data: {}", Util.convertByteBufferToString(msgBuf, msgBuf.limit()));
+                
+                send(lm);
+                
             } else {
                 log.error("failed to establish encryption, server said '{}'", message.getBody().getResult());
             }
         }
     };
+    
+    final MessageHandler<Multi> multiHandler = new MessageHandler<Multi>() {
+        public void handleMessage(Multi message) {
+            try {
+                ZipInputStream s = new ZipInputStream(message.getBody().getMessageBody().newInput());
+                s.getNextEntry();
+                ByteBuffer buf = getNewBuffer();
+                int v;
+                while ((v = s.read()) != -1) {
+                    buf.put((byte)v);
+                }
+                buf.flip();
+                int len = buf.limit();
+                while(buf.position() != len) {
+                    buf.limit(len);
+                    int subSize = buf.getInt();
+                    buf.limit(buf.position() + subSize);
+                    Message<?, ?> msg = plainTextCodec.fromWire(buf);
+                    log.debug("entry message is {}", msg != null ? msg.getClass() : "NULL");
+                    if (msg != null) {
+                        handleReceive(msg);
+                    }
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    };
+    
+    
+    final MessageHandler<ClientLogonResponse> logonResultHandler = new MessageHandler<ClientLogonResponse>() {
+        public void handleMessage(ClientLogonResponse message) {
+            log.info("{}", message.getHeader());
+            log.info("{}", message.getBody());
+        }
+    };
+    
 
     final MessageCodec plainTextCodec = new MessageCodec() {
 
         public void toWire(Message<?, ?> msg, ByteBuffer dstBuf) {
-            dstBuf.putInt(msg.getType().v());
+            dstBuf.putInt(msg.getCode());
             msg.serialize(dstBuf);
         }
 
         public Message<?, ?> fromWire(ByteBuffer srcBuf) {
-            EMsg type = EMsg.f(srcBuf.getInt());
-            Message<?, ?> msg = MessageFactory.forType(type);
+            int type = srcBuf.getInt();
+            EMsg eMsg = EMsg.f(type);
+            log.trace("trying to decode plaintext message of type {}", eMsg);
+            Message<?, ?> msg = Message.forEMsg(eMsg);
             if (msg != null) {
                 msg.deserialize(srcBuf);
+            } else {
+                srcBuf.position(srcBuf.limit());
             }
             return msg;
         }
@@ -240,8 +320,9 @@ public class Connection {
                 cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(sessionKey, "AES"), new IvParameterSpec(iv));
                 // generate plaintext message buf
                 ByteBuffer srcBuf = getNewBuffer();
-                srcBuf.putInt(msg.getType().v());
+                srcBuf.putInt(msg.getCode());
                 msg.serialize(srcBuf);
+                srcBuf.flip();
                 // encode message
                 cipher.doFinal(srcBuf, dstBuf);
             } catch (GeneralSecurityException e) {
@@ -266,10 +347,12 @@ public class Connection {
                 cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(sessionKey, "AES"), new IvParameterSpec(iv));
                 ByteBuffer dstBuf = getNewBuffer();
                 cipher.doFinal(srcBuf, dstBuf);
-
+                
                 // construct message
-                EMsg type = EMsg.f(dstBuf.getInt());
-                Message<?, ?> msg = MessageFactory.forType(type);
+                dstBuf.flip();
+                EMsg eMsg = EMsg.f(dstBuf.getInt());
+                log.trace("trying to decode encrypted message of type {}", eMsg);
+                Message<?, ?> msg = Message.forEMsg(eMsg);
                 if (msg != null) {
                     msg.deserialize(dstBuf);
                 }

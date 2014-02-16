@@ -1,8 +1,8 @@
 package telekinesis.message.internal;
 
 import java.nio.ByteBuffer;
+import java.util.zip.CRC32;
 
-import telekinesis.crypto.CryptoHelper;
 import telekinesis.message.ToWire;
 import telekinesis.message.annotations.RegisterMessage;
 import telekinesis.model.EMsg;
@@ -33,10 +33,11 @@ public class ChannelEncryptResponse extends BaseInternalSendable<ChannelEncryptR
 
         public void serialize(ByteBuffer buf) {
             buf.putInt(protocolVersion);
-            buf.putInt(128); //
+            buf.putInt(128);
             buf.put(key);
-            buf.put(CryptoHelper.CRCHash(key));
-            buf.putInt(0);
+            CRC32 crc = new CRC32();
+            crc.update(key);
+            buf.putLong(crc.getValue());
         }
 
     }
