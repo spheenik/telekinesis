@@ -12,7 +12,7 @@ import com.google.protobuf.GeneratedMessage;
 
 public abstract class Message<H, B> implements FromWire, ToWire {
 
-    protected final Logger log = LoggerFactory.getLogger(getClass());
+    protected static final Logger staticLog = LoggerFactory.getLogger(Message.class);
     
     public static final int ProtoMask = 0x80000000;
     public static final int EMsgMask = ~ProtoMask;
@@ -64,6 +64,7 @@ public abstract class Message<H, B> implements FromWire, ToWire {
     public static <M extends Message> M forEMsg(EMsg eMsg) {
         Def def = MessageRegistry.REGISTRY.get(eMsg);
         if (def == null) {
+            staticLog.debug("no message definition for {}", eMsg);
             return null;
         }
         M msg = null;

@@ -7,6 +7,7 @@ import java.nio.ByteOrder;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.security.Security;
+import java.util.Properties;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.zip.ZipInputStream;
@@ -52,6 +53,7 @@ public class Connection {
     private static final int MAGIC = 0x31305456; // "VT01"
 
     private final Logger log = LoggerFactory.getLogger(getClass());
+    private final Logger wireLog = LoggerFactory.getLogger("wire");
 
     private final SocketAddress address;
 
@@ -111,6 +113,10 @@ public class Connection {
             channel.getSinkChannel().resumeWrites();
         }
     }
+    
+    private void dumpMessage(String prefix, Message<?, ?> msg) {
+        log.info("{}\nHEADER:\n{}\nBODY:\n{}", prefix, msg.getHeader(), msg.getBody());
+    }
 
     private void handleReceive(Message<?, ?> msg) {
         if (msg.getEMsg() == EMsg.ChannelEncryptRequest) {
@@ -122,7 +128,7 @@ public class Connection {
         } else if (msg.getEMsg() == EMsg.Multi) {
             multiHandler.handleMessage((Multi) msg);
         } else { 
-           log.info("unhandled message:\nHEADER:\n{}\nBODY:\n{}", msg.getHeader(), msg.getBody());
+           //dumpMessage("unhandled message:", msg);
         }
     }
 
@@ -153,12 +159,11 @@ public class Connection {
                 if (readBuf.position() >= 4) {
                     int len = readBuf.getInt(0);
                     if (readBuf.position() >= len + 8) {
-                        log.info("packet with length {} received", len);
                         if (readBuf.getInt(4) != MAGIC) {
                             throw new IOException("packet from the server doesn't contain proper MAGIC");
                         }
                         readBuf.flip();
-                        log.trace("received data: {}", Util.convertByteBufferToString(readBuf, len + 8));
+                        wireLog.trace("received {} bytes: {}", len + 8, Util.convertByteBufferToString(readBuf, len + 8));
                         readBuf.position(8);
                         Message<?, ?> m = getCodec().fromWire(readBuf);
                         readBuf.compact();
@@ -184,7 +189,7 @@ public class Connection {
                         return;
                     } else {
                         writeBuf = out.remove();
-                        log.trace("sending data: {}", Util.convertByteBufferToString(writeBuf, writeBuf.limit()));
+                        wireLog.trace("sending {} bytes: {}", writeBuf.limit(), Util.convertByteBufferToString(writeBuf, writeBuf.limit()));
                     }
                     channel.write(writeBuf);
                 }
@@ -219,8 +224,15 @@ public class Connection {
 
                 //lm.getBody().setObfustucatedPrivateIp(ByteBuffer.wrap(((InetSocketAddress) channel.getLocalAddress()).getAddress().getAddress()).getInt() & 0xBAADF00D);
                 
-                lm.getBody().setAccountName("telekinesis_bot");
-                lm.getBody().setPassword("SECRET");
+                Properties p = new Properties();
+                try {
+                    p.load(getClass().getResourceAsStream("/credentials.properties"));
+                } catch (IOException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                lm.getBody().setAccountName(p.getProperty("user"));
+                lm.getBody().setPassword(p.getProperty("pass"));
                 
                 lm.getBody().setProtocolVersion(65575);
                 
@@ -261,10 +273,9 @@ public class Connection {
                     int subSize = buf.getInt();
                     buf.limit(buf.position() + subSize);
                     Message<?, ?> msg = plainTextCodec.fromWire(buf);
-                    log.debug("entry message is {}", msg != null ? msg.getClass() : "NULL");
                     if (msg != null) {
                         handleReceive(msg);
-                    }
+                    } 
                 }
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -275,8 +286,7 @@ public class Connection {
     
     final MessageHandler<ClientLogonResponse> logonResultHandler = new MessageHandler<ClientLogonResponse>() {
         public void handleMessage(ClientLogonResponse message) {
-            log.info("{}", message.getHeader());
-            log.info("{}", message.getBody());
+            dumpMessage("login response:", message);
         }
     };
     
@@ -291,7 +301,7 @@ public class Connection {
         public Message<?, ?> fromWire(ByteBuffer srcBuf) {
             int type = srcBuf.getInt();
             EMsg eMsg = EMsg.f(type);
-            log.trace("trying to decode plaintext message of type {}", eMsg);
+            log.trace("got plaintext message of type {}", eMsg);
             Message<?, ?> msg = Message.forEMsg(eMsg);
             if (msg != null) {
                 msg.deserialize(srcBuf);
@@ -351,7 +361,7 @@ public class Connection {
                 // construct message
                 dstBuf.flip();
                 EMsg eMsg = EMsg.f(dstBuf.getInt());
-                log.trace("trying to decode encrypted message of type {}", eMsg);
+                log.trace("got encrypted message of type {}", eMsg);
                 Message<?, ?> msg = Message.forEMsg(eMsg);
                 if (msg != null) {
                     msg.deserialize(dstBuf);
