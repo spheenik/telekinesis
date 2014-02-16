@@ -64,7 +64,7 @@ public abstract class Message<H, B> implements FromWire, ToWire {
     public static <M extends Message> M forEMsg(EMsg eMsg) {
         Def def = MessageRegistry.REGISTRY.get(eMsg);
         if (def == null) {
-            staticLog.debug("no message definition for {}", eMsg);
+            staticLog.warn("no message definition for {}", eMsg);
             return null;
         }
         M msg = null;

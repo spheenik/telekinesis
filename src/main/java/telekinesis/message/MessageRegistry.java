@@ -4,10 +4,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.reflections.Reflections;
+import org.reflections.scanners.TypeAnnotationsScanner;
+import org.reflections.util.ClasspathHelper;
+import org.reflections.util.ConfigurationBuilder;
+import org.reflections.util.FilterBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import telekinesis.message.annotations.RegisterMessage;
+import telekinesis.message.proto.generated.SteammessagesBase;
 import telekinesis.model.EMsg;
 
 import com.google.protobuf.GeneratedMessage;
@@ -48,7 +53,19 @@ public class MessageRegistry {
     
     static {
         REGISTRY = new HashMap<EMsg, Def>();
-        Reflections reflections = new Reflections(MessageRegistry.class.getPackage().getName());
+        
+        Reflections reflections = new Reflections(new ConfigurationBuilder()
+            .filterInputsBy(
+                new FilterBuilder()
+                .excludePackage(SteammessagesBase.class)
+            )
+            .setUrls(
+                ClasspathHelper.forPackage(MessageRegistry.class.getPackage().getName())
+            )
+            .setScanners(
+                new TypeAnnotationsScanner()
+            )
+        );
         for(Class<?> clazz : reflections.getTypesAnnotatedWith(RegisterMessage.class)) {
             RegisterMessage mb = clazz.getAnnotation(RegisterMessage.class);
             REGISTRY.put(mb.type(), new Def((Class<? extends Message>)clazz, mb.headerClass(), mb.bodyClass()));
