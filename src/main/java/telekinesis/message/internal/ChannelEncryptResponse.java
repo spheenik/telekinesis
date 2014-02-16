@@ -7,8 +7,13 @@ import telekinesis.message.ToWire;
 import telekinesis.message.annotations.RegisterMessage;
 import telekinesis.model.EMsg;
 
-@RegisterMessage(type = EMsg.ChannelEncryptResponse, headerClass = SimpleHeader.class, bodyClass=ChannelEncryptResponse.Body.class)
+@RegisterMessage(EMsg.ChannelEncryptResponse)
 public class ChannelEncryptResponse extends BaseInternalSendable<ChannelEncryptResponse.Body> {
+
+    @Override
+    protected void constructBody() {
+        setBody(new Body());
+    }
 
     public static class Body implements ToWire {
         

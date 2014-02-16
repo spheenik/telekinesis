@@ -7,9 +7,14 @@ import telekinesis.message.annotations.RegisterMessage;
 import telekinesis.model.EMsg;
 import telekinesis.model.EUniverse;
 
-@RegisterMessage(type=EMsg.ChannelEncryptRequest, headerClass=SimpleHeader.class, bodyClass=ChannelEncryptRequest.Body.class)
+@RegisterMessage(EMsg.ChannelEncryptRequest)
 public class ChannelEncryptRequest extends BaseInternalReceivable<ChannelEncryptRequest.Body>  {
     
+    @Override
+    protected void constructBody() {
+        setBody(new Body());
+    }
+
     public static class Body implements FromWire {
 
         private int protocolVersion = 1;

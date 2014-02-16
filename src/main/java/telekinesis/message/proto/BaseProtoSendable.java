@@ -2,15 +2,16 @@ package telekinesis.message.proto;
 
 import java.nio.ByteBuffer;
 
-import telekinesis.message.Message;
+import telekinesis.message.ToWire;
+import telekinesis.message.proto.generated.SteammessagesBase.CMsgProtoBufHeader;
 
 import com.google.protobuf.GeneratedMessage;
 
-public class BaseProtoSendable<H extends GeneratedMessage.Builder<?>, B extends GeneratedMessage.Builder<?>> extends Message<H, B> {
+public abstract class BaseProtoSendable<B extends GeneratedMessage.Builder<?>> extends BaseProto<CMsgProtoBufHeader.Builder, B> implements ToWire {
 
     @Override
-    public void deserialize(ByteBuffer buf) {
-        throw new UnsupportedOperationException();
+    protected void constructHeader() {
+        setHeader(CMsgProtoBufHeader.newBuilder());
     }
 
     @Override
@@ -22,6 +23,5 @@ public class BaseProtoSendable<H extends GeneratedMessage.Builder<?>, B extends 
         arr = getBody().build().toByteArray();
         buf.put(arr);
     }
-
 
 }

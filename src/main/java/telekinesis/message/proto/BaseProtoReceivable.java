@@ -1,38 +1,36 @@
 package telekinesis.message.proto;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import telekinesis.message.Message;
-import telekinesis.message.MessageRegistry;
-import telekinesis.message.MessageRegistry.Def;
+import telekinesis.message.FromWire;
+import telekinesis.message.proto.generated.SteammessagesBase.CMsgProtoBufHeader;
 
 import com.google.protobuf.GeneratedMessage;
 
-public class BaseProtoReceivable<H extends GeneratedMessage, B extends GeneratedMessage> extends Message<H, B> {
+public abstract class BaseProtoReceivable<B extends GeneratedMessage> extends BaseProto<CMsgProtoBufHeader, B> implements FromWire {
 
     @Override
-    public void deserialize(ByteBuffer buf) {
-        try {
-            Def d = MessageRegistry.REGISTRY.get(getEMsg());
-            byte[] arr = null;
-    
-            arr = new byte[buf.getInt()];
-            buf.get(arr);
-            setHeader((H) d.getHeaderClass().getMethod("parseFrom", byte[].class).invoke(null, arr)); 
-    
-            arr = new byte[buf.remaining()];
-            buf.get(arr);
-            setBody((B) d.getBodyClass().getMethod("parseFrom", byte[].class).invoke(null, arr));
-            
-        } catch (Exception e) {
-            throw new RuntimeException(e); 
-        } 
+    protected void constructHeader() {
     }
 
     @Override
-    public void serialize(ByteBuffer buf) {
-        throw new UnsupportedOperationException();
+    protected void constructBody() {
     }
+    
+    abstract protected B parseBody(byte[] data) throws IOException;
 
+    @Override
+    public void deserialize(ByteBuffer buf) throws IOException {
+        byte[] arr = null;
+
+        arr = new byte[buf.getInt()];
+        buf.get(arr);
+        setHeader(CMsgProtoBufHeader.parseFrom(arr));
+
+        arr = new byte[buf.remaining()];
+        buf.get(arr);
+        setBody(parseBody(arr));
+    }
 
 }

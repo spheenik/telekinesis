@@ -7,8 +7,13 @@ import telekinesis.message.annotations.RegisterMessage;
 import telekinesis.model.EMsg;
 import telekinesis.model.EResult;
 
-@RegisterMessage(type = EMsg.ChannelEncryptResult, headerClass = SimpleHeader.class, bodyClass=ChannelEncryptResult.Body.class)
+@RegisterMessage(EMsg.ChannelEncryptResult)
 public class ChannelEncryptResult extends BaseInternalReceivable<ChannelEncryptResult.Body> {
+
+    @Override
+    protected void constructBody() {
+        setBody(new Body());
+    }
 
     public static class Body implements FromWire {
         private EResult result = EResult.Invalid;

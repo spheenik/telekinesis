@@ -10,7 +10,5 @@ import telekinesis.model.EMsg;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(value=ElementType.TYPE)
 public @interface RegisterMessage {
-    EMsg type();
-    Class<?> headerClass();
-    Class<?> bodyClass();
+    EMsg value();
 }

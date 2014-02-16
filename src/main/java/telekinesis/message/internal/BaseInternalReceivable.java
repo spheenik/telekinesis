@@ -1,21 +1,16 @@
 package telekinesis.message.internal;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import telekinesis.message.FromWire;
-import telekinesis.message.Message;
 
-public class BaseInternalReceivable<B extends FromWire> extends Message<SimpleHeader, B> {
+public abstract class BaseInternalReceivable<B extends FromWire> extends BaseInternal<B> implements FromWire {
 
     @Override
-    public void deserialize(ByteBuffer buf) {
+    public void deserialize(ByteBuffer buf) throws IOException {
         getHeader().deserialize(buf);
         getBody().deserialize(buf);
     }
 
-    @Override
-    public void serialize(ByteBuffer buf) {
-        throw new UnsupportedOperationException();
-    }
-    
 }

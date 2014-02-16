@@ -5,7 +5,7 @@
 		</encoder>
 	</appender>
 
-	<logger name="wire" level="info" />
+	<logger name="wire" level="trace" />
 	<logger name="telekinesis.connection" level="debug" />
 
 	<root level="info">

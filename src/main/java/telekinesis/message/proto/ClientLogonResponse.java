@@ -1,10 +1,16 @@
 package telekinesis.message.proto;
 
+import java.io.IOException;
+
 import telekinesis.message.annotations.RegisterMessage;
-import telekinesis.message.proto.generated.SteammessagesBase.CMsgProtoBufHeader;
 import telekinesis.message.proto.generated.SteammessagesClientserver.CMsgClientLogonResponse;
 import telekinesis.model.EMsg;
 
-@RegisterMessage(type=EMsg.ClientLogOnResponse, headerClass=CMsgProtoBufHeader.class, bodyClass=CMsgClientLogonResponse.class)
-public class ClientLogonResponse extends BaseProtoReceivable<CMsgProtoBufHeader, CMsgClientLogonResponse> {
+@RegisterMessage(EMsg.ClientLogOnResponse)
+public class ClientLogonResponse extends BaseProtoReceivable<CMsgClientLogonResponse> {
+
+    @Override
+    protected CMsgClientLogonResponse parseBody(byte[] data) throws IOException {
+        return CMsgClientLogonResponse.parseFrom(data);
+    }
 }
