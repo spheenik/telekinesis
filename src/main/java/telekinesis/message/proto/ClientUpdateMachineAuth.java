@@ -2,7 +2,7 @@ package telekinesis.message.proto;
 
 import java.io.IOException;
 
-import telekinesis.message.annotations.RegisterMessage;
+import telekinesis.annotations.RegisterMessage;
 import telekinesis.message.proto.generated.SteammessagesClientserver.CMsgClientUpdateMachineAuth;
 import telekinesis.model.EMsg;
 

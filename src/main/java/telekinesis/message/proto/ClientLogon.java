@@ -1,6 +1,6 @@
 package telekinesis.message.proto;
 
-import telekinesis.message.annotations.RegisterMessage;
+import telekinesis.annotations.RegisterMessage;
 import telekinesis.message.proto.generated.SteammessagesClientserver.CMsgClientLogon;
 import telekinesis.model.EMsg;
 

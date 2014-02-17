@@ -2,8 +2,8 @@ package telekinesis.message.internal;
 
 import java.nio.ByteBuffer;
 
+import telekinesis.annotations.RegisterMessage;
 import telekinesis.message.Decodable;
-import telekinesis.message.annotations.RegisterMessage;
 import telekinesis.model.EMsg;
 import telekinesis.model.EResult;
 

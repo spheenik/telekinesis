@@ -3,8 +3,8 @@ package telekinesis.message.internal;
 import java.nio.ByteBuffer;
 import java.util.zip.CRC32;
 
+import telekinesis.annotations.RegisterMessage;
 import telekinesis.message.Encodable;
-import telekinesis.message.annotations.RegisterMessage;
 import telekinesis.model.EMsg;
 
 @RegisterMessage(EMsg.ChannelEncryptResponse)

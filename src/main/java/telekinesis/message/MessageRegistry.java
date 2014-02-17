@@ -11,7 +11,7 @@ import org.reflections.util.FilterBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import telekinesis.message.annotations.RegisterMessage;
+import telekinesis.annotations.RegisterMessage;
 import telekinesis.message.proto.BaseProto;
 import telekinesis.message.proto.generated.SteammessagesBase;
 import telekinesis.model.EMsg;

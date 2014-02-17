@@ -1,4 +1,4 @@
-package telekinesis.message.annotations;
+package telekinesis.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
