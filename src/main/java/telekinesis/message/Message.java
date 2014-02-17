@@ -1,37 +1,11 @@
 package telekinesis.message;
 
+public interface Message<H, B> {
 
-public abstract class Message<H, B> {
-
-    private H header;
-    private B body;
+    public H getHeader();
+    public void setHeader(H header);
     
-    protected abstract void constructHeader();
-    protected abstract void constructBody();
-    
-    public Message() {
-        constructHeader();
-        constructBody();
-    }
-    
-    public H getHeader() {
-        return header;
-    }
-
-    public void setHeader(H header) {
-        this.header = header;
-    }
-    
-    public B getBody() {
-        return body;
-    }
-
-    public void setBody(B body) {
-        this.body = body;
-    }
-    
-    public <M extends Message<?, ?>> M asResponseFor(Message<?, ?> request) {
-        return (M) this;
-    }
+    public B getBody();
+    public void setBody(B body);
     
 }

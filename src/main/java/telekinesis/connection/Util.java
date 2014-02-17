@@ -1,6 +1,7 @@
 package telekinesis.connection;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 public class Util {
 
@@ -27,5 +28,29 @@ public class Util {
         }
         return new String(hexChars);
     }
+    
+    public static String dumpSHA1(byte[] bytes) {
+        char[] hexChars = new char[bytes.length * 2];
+        for (int j = 0; j < bytes.length; j++) {
+            int v = bytes[j] & 0xFF;
+            hexChars[j * 2] = hexArray[v >>> 4];
+            hexChars[j * 2 + 1] = hexArray[v & 0x0F];
+        }
+        return new String(hexChars);
+    }
+    
+    public static byte[] restoreSHA1(String src) {
+        byte[] result = new byte[20];
+        for (int j = 0; j < 20; j++) {
+            int x = 
+                (Arrays.binarySearch(hexArray, src.charAt(j*2)) << 4)
+                + Arrays.binarySearch(hexArray, src.charAt(j*2+1));
+            result[j] = (byte) x;
+        }
+        return result;
+        
+    }
+
+    
 
 }

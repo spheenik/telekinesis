@@ -21,12 +21,12 @@ public class MessageRegistry {
 
     private static final Logger log = LoggerFactory.getLogger(MessageRegistry.class);
 
-    private static final Map<EMsg, Class<? extends Message>> TYPE_BY_EMSG;
-    private static final Map<Class<? extends Message>, EMsg> EMSG_BY_TYPE;
+    private static final Map<EMsg, Class<? extends AbstractMessage>> TYPE_BY_EMSG;
+    private static final Map<Class<? extends AbstractMessage>, EMsg> EMSG_BY_TYPE;
 
     static {
-        TYPE_BY_EMSG = new HashMap<EMsg, Class<? extends Message>>();
-        EMSG_BY_TYPE = new HashMap<Class<? extends Message>, EMsg>();
+        TYPE_BY_EMSG = new HashMap<EMsg, Class<? extends AbstractMessage>>();
+        EMSG_BY_TYPE = new HashMap<Class<? extends AbstractMessage>, EMsg>();
 
         Reflections reflections = new Reflections(new ConfigurationBuilder()
             .filterInputsBy(
@@ -43,8 +43,8 @@ public class MessageRegistry {
 
         for (Class<?> clazz : reflections.getTypesAnnotatedWith(RegisterMessage.class)) {
             RegisterMessage mb = clazz.getAnnotation(RegisterMessage.class);
-            TYPE_BY_EMSG.put(mb.value(), (Class<? extends Message>) clazz);
-            EMSG_BY_TYPE.put((Class<? extends Message>) clazz, mb.value());
+            TYPE_BY_EMSG.put(mb.value(), (Class<? extends AbstractMessage>) clazz);
+            EMSG_BY_TYPE.put((Class<? extends AbstractMessage>) clazz, mb.value());
         }
     }
 
@@ -56,8 +56,8 @@ public class MessageRegistry {
         return BaseProto.class.isAssignableFrom(msg) ? eMsg.v() | 0x80000000 : eMsg.v();
     }
     
-    public static <M extends Message> M forEMsg(EMsg eMsg) {
-        Class<? extends Message> clazz = TYPE_BY_EMSG.get(eMsg);
+    public static <M extends AbstractMessage> M forEMsg(EMsg eMsg) {
+        Class<? extends AbstractMessage> clazz = TYPE_BY_EMSG.get(eMsg);
         if (clazz == null) {
             log.warn("no message definition for {}", eMsg);
             return null;

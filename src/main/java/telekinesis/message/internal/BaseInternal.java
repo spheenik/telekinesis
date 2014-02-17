@@ -2,18 +2,16 @@ package telekinesis.message.internal;
 
 import java.nio.ByteBuffer;
 
-import telekinesis.message.FromWire;
-import telekinesis.message.Message;
-import telekinesis.message.ToWire;
+import telekinesis.message.AbstractMessage;
 
-public abstract class BaseInternal<B> extends Message<BaseInternal.Header, B> {
+public abstract class BaseInternal<B> extends AbstractMessage<BaseInternal.Header, B> {
 
     @Override
     protected void constructHeader() {
         setHeader(new Header());
     }
 
-    public static class Header implements FromWire, ToWire {
+    public static class Header {
 
         private long sourceJobId = -1L;
         private long targetJobId = -1L;
