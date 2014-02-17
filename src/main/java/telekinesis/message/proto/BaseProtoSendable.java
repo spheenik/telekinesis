@@ -18,7 +18,7 @@ public abstract class BaseProtoSendable<B extends GeneratedMessage.Builder<?>> e
     
     @Override
     public void prepareTransmission(ConnectionContext context) throws IOException {
-        getHeader().setSteamid(context.getSteamID().convertToLong());
+        getHeader().setSteamid(context.getSteamID().toLong());
         getHeader().setClientSessionid(context.getSessionId());
     }
 
