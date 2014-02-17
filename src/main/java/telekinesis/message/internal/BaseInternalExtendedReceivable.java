@@ -7,7 +7,7 @@ import telekinesis.connection.ConnectionContext;
 import telekinesis.message.Decodable;
 import telekinesis.message.ReceivableMessage;
 
-public abstract class BaseInternalReceivable<B extends Decodable> extends BaseInternal<B> implements ReceivableMessage<BaseInternal.Header, B> {
+public abstract class BaseInternalExtendedReceivable<B extends Decodable> extends BaseInternalExtended<B> implements ReceivableMessage<BaseInternalExtended.Header, B> {
 
     @Override
     public void updateContext(ConnectionContext context) throws IOException {

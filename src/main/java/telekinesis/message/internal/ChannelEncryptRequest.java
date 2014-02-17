@@ -36,6 +36,7 @@ public class ChannelEncryptRequest extends BaseInternalReceivable<ChannelEncrypt
             this.universe = universe;
         }
 
+        @Override
         public void decodeFrom(ByteBuffer buf) {
             protocolVersion = buf.getInt();
             universe = EUniverse.f(buf.getInt());

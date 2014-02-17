@@ -49,12 +49,17 @@ public class MessageRegistry {
     }
 
     public static int getWireCodeForClass(Class msg) {
+        EMsg eMsg = getEMsgForClass(msg);
+        return BaseProto.class.isAssignableFrom(msg) ? eMsg.v() | 0x80000000 : eMsg.v();
+    }
+    
+    public static EMsg getEMsgForClass(Class msg) {
         EMsg eMsg = EMSG_BY_TYPE.get(msg);
         if (eMsg == null) {
             throw new RuntimeException("EMsg for given class not found!");
         }
-        return BaseProto.class.isAssignableFrom(msg) ? eMsg.v() | 0x80000000 : eMsg.v();
-    }
+        return eMsg;
+    }    
     
     public static <M extends AbstractMessage> M forEMsg(EMsg eMsg) {
         Class<? extends AbstractMessage> clazz = TYPE_BY_EMSG.get(eMsg);

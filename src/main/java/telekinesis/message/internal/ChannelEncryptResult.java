@@ -26,6 +26,7 @@ public class ChannelEncryptResult extends BaseInternalReceivable<ChannelEncryptR
             this.result = result;
         }
 
+        @Override
         public void decodeFrom(ByteBuffer buf) {
             result = EResult.f(buf.getInt());
         }

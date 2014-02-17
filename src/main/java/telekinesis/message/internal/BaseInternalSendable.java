@@ -15,7 +15,7 @@ public abstract class BaseInternalSendable<B extends Encodable> extends BaseInte
 
     @Override
     public void encodeTo(ByteBuffer buf) throws IOException {
-        getHeader().serialize(buf);
+        getHeader().encodeTo(buf);
         getBody().encodeTo(buf);
     }
 

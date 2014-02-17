@@ -26,6 +26,7 @@ import telekinesis.connection.codec.AESCodec;
 import telekinesis.connection.codec.MessageCodec;
 import telekinesis.connection.codec.PlainTextCodec;
 import telekinesis.message.Message;
+import telekinesis.message.MessageRegistry;
 import telekinesis.message.ReceivableMessage;
 import telekinesis.message.TransmittableMessage;
 import telekinesis.message.internal.ChannelEncryptRequest;
@@ -109,11 +110,13 @@ public class Connection {
     }
 
     private void handleReceive(ReceivableMessage<?, ?> msg) throws IOException {
-        if (msg == null) {
-            return;
+        if (msg != null) {
+            msg.updateContext(connectionContext);
+            if (!handlerRegistry.handle(msg)) {
+                log.warn("unhandled message of type {}", MessageRegistry.getEMsgForClass(msg.getClass()));
+                dumpMessage("", msg);
+            }
         }
-        msg.updateContext(connectionContext);
-        handlerRegistry.handle(msg);
     }
 
     private final ChannelListener<StreamConnection> openListener = new ChannelListener<StreamConnection>() {
@@ -271,9 +274,11 @@ public class Connection {
             ReceivableMessage<?, ?> msg = plainTextCodec.fromWire(buf);
             if (msg != null) {
                 handleReceive(msg);
-            } else {
-                buf.position(buf.limit());                    
-            }
+                if (buf.remaining() > 0) {
+                    log.warn("while reading multi, a message of class {} did not read the all it's data: {} bytes remaining", msg.getClass().getSimpleName(), buf.remaining());
+                }
+            } 
+            buf.position(buf.limit());
         }
     }
     

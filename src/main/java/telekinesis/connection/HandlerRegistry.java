@@ -63,11 +63,12 @@ public class HandlerRegistry {
         }
     }
     
-    public void handle(ReceivableMessage<?, ?> message) {
+    public boolean handle(ReceivableMessage<?, ?> message) {
         Invoker i = invokers.get(message.getClass());
         if (i != null) {
             i.invoke(message);
         }
+        return i != null;
     }
     
 }

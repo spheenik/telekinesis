@@ -45,6 +45,7 @@ public class ChannelEncryptResponse extends BaseInternalSendable<ChannelEncryptR
             this.key = key;
         }
 
+        @Override
         public void encodeTo(ByteBuffer buf) {
             buf.putInt(protocolVersion);
             buf.putInt(blockLength);

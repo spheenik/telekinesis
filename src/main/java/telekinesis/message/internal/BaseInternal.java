@@ -3,6 +3,8 @@ package telekinesis.message.internal;
 import java.nio.ByteBuffer;
 
 import telekinesis.message.AbstractMessage;
+import telekinesis.message.Decodable;
+import telekinesis.message.Encodable;
 
 public abstract class BaseInternal<B> extends AbstractMessage<BaseInternal.Header, B> {
 
@@ -11,7 +13,7 @@ public abstract class BaseInternal<B> extends AbstractMessage<BaseInternal.Heade
         setHeader(new Header());
     }
 
-    public static class Header {
+    public static class Header implements Encodable, Decodable {
 
         private long sourceJobId = -1L;
         private long targetJobId = -1L;
@@ -32,14 +34,25 @@ public abstract class BaseInternal<B> extends AbstractMessage<BaseInternal.Heade
             this.targetJobId = targetJobId;
         }
 
-        public void deserialize(ByteBuffer buf) {
+        public void decodeFrom(ByteBuffer buf) {
             sourceJobId = buf.getLong();
             targetJobId = buf.getLong();
         }
 
-        public void serialize(ByteBuffer buf) {
+        public void encodeTo(ByteBuffer buf) {
             buf.putLong(sourceJobId);
             buf.putLong(targetJobId);
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder builder = new StringBuilder();
+            builder.append("Header [sourceJobId=");
+            builder.append(sourceJobId);
+            builder.append(", targetJobId=");
+            builder.append(targetJobId);
+            builder.append("]");
+            return builder.toString();
         }
         
     }
