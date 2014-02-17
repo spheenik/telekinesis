@@ -21,11 +21,11 @@ import org.xnio.XnioWorker;
 import org.xnio.conduits.ConduitStreamSinkChannel;
 import org.xnio.conduits.ConduitStreamSourceChannel;
 
+import telekinesis.annotations.Handler;
 import telekinesis.connection.codec.AESCodec;
 import telekinesis.connection.codec.MessageCodec;
 import telekinesis.connection.codec.PlainTextCodec;
 import telekinesis.message.Message;
-import telekinesis.message.MessageHandler;
 import telekinesis.message.ReceivableMessage;
 import telekinesis.message.TransmittableMessage;
 import telekinesis.message.internal.ChannelEncryptRequest;
@@ -48,6 +48,7 @@ public class Connection {
 
     private final SocketAddress address;
 
+    private final HandlerRegistry handlerRegistry = new HandlerRegistry();
     private final BlockingDeque<ByteBuffer> out = new LinkedBlockingDeque<ByteBuffer>();
 
     private ConnectionState connectionState = ConnectionState.DISCONNECTED;
@@ -59,10 +60,11 @@ public class Connection {
     private AESCodec aesCodec = null;
     private boolean encryptionActive = false;
     
-    private ConnectionContext connectionContext = new ConnectionContext(); 
+    private ConnectionContext connectionContext = new ConnectionContext();
     
     public Connection(SocketAddress address) {
         this.address = address;
+        handlerRegistry.addInstance(this);
     }
     
     public void connect() throws IOException {
@@ -106,29 +108,12 @@ public class Connection {
         log.info("{}\nHEADER:\n{}\nBODY:\n{}", prefix, msg.getHeader(), msg.getBody());
     }
 
-    private void handleReceive(ReceivableMessage<?, ?> msg) {
+    private void handleReceive(ReceivableMessage<?, ?> msg) throws IOException {
         if (msg == null) {
             return;
         }
-        try {
-            msg.updateContext(connectionContext);
-
-            if (msg instanceof ChannelEncryptRequest) {
-                encryptRequestHandler.handleMessage((ChannelEncryptRequest) msg);
-            } else if (msg instanceof ChannelEncryptResult) {
-                encryptResultHandler.handleMessage((ChannelEncryptResult) msg);
-            } else if (msg instanceof ClientLogonResponse) {
-                logonResultHandler.handleMessage((ClientLogonResponse) msg);
-            } else if (msg instanceof Multi) {
-                multiHandler.handleMessage((Multi) msg);
-            } else if (msg instanceof ClientUpdateMachineAuth) {
-                updateMachineAuthHandler.handleMessage((ClientUpdateMachineAuth) msg);
-            } else {
-                dumpMessage("unhandled message:", msg);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        msg.updateContext(connectionContext);
+        handlerRegistry.handle(msg);
     }
 
     private final ChannelListener<StreamConnection> openListener = new ChannelListener<StreamConnection>() {
@@ -198,129 +183,124 @@ public class Connection {
         }
     };
 
-    final MessageHandler<ChannelEncryptRequest> encryptRequestHandler = new MessageHandler<ChannelEncryptRequest>() {
-        public void handleMessage(ChannelEncryptRequest message) throws IOException {
-            log.info("got encryption request for universe {}, protocol version {}", message.getBody().getUniverse(), message.getBody().getProtocolVersion());
-            aesCodec = new AESCodec(message.getBody().getUniverse());
-            ChannelEncryptResponse resp = new ChannelEncryptResponse();
-            resp.getBody().setProtocolVersion(message.getBody().getProtocolVersion());
-            resp.getBody().setBlockLength(AESCodec.BLOCK_SIZE);
-            resp.getBody().setKey(aesCodec.getEncryptedKey());
-            send(resp);
-        }
-    };
-
-    final MessageHandler<ChannelEncryptResult> encryptResultHandler = new MessageHandler<ChannelEncryptResult>() {
-        public void handleMessage(ChannelEncryptResult message) throws IOException {
-            if (message.getBody().getResult() == EResult.OK) {
-                log.info("encryption established");
-                encryptionActive = true;
-
-                ClientLogon lm = new ClientLogon();
-
-                // lm.getBody().setObfustucatedPrivateIp(ByteBuffer.wrap(((InetSocketAddress)
-                // channel.getLocalAddress()).getAddress().getAddress()).getInt()
-                // & 0xBAADF00D);
-
-                Properties p = new Properties();
-                try {
-                    p.load(getClass().getResourceAsStream("/credentials.properties"));
-                } catch (IOException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-                lm.getBody().setAccountName(p.getProperty("user"));
-                lm.getBody().setPassword(p.getProperty("pass"));
-                String authCode = p.getProperty("authCode");
-                if (authCode != null) {
-                    lm.getBody().setAuthCode(authCode);
-                }
-                String sentry = p.getProperty("sentry");
-                if (sentry != null) {
-                    lm.getBody().setShaSentryfile(ByteString.copyFrom(Util.restoreSHA1(sentry)));
-                    lm.getBody().setEresultSentryfile(EResult.OK.v());
-                } else {
-                    lm.getBody().setEresultSentryfile(EResult.FileNotFound.v());
-                }
-                lm.getBody().setProtocolVersion(65575);
-
-                // log.info("{}", lm.getHeader().build());
-                // log.info("{}", lm.getBody().build());
-                //
-                // ByteBuffer msgBuf = getNewBuffer();
-                // msgBuf.position(4);
-                // msgBuf.putInt(MAGIC);
-                // //plainTextCodec.toWire(lm, msgBuf);
-                // encryptionCodec.toWire(lm, msgBuf);
-                // msgBuf.putInt(0, msgBuf.position() - 8);
-                // msgBuf.flip();
-                // log.info("sending data: {}",
-                // Util.convertByteBufferToString(msgBuf, msgBuf.limit()));
-
-                send(lm);
-
-            } else {
-                log.error("failed to establish encryption, server said '{}'", message.getBody().getResult());
-            }
-        }
-    };
-
-    final MessageHandler<Multi> multiHandler = new MessageHandler<Multi>() {
-        public void handleMessage(Multi message) throws IOException {
-            ByteBuffer buf = Util.getNewBuffer();
-            if (message.getBody().getSizeUnzipped() > 0) {
-                ZipInputStream s = new ZipInputStream(message.getBody().getMessageBody().newInput());
-                s.getNextEntry();
-                int v;
-                while ((v = s.read()) != -1) {
-                    buf.put((byte) v);
-                }
-            } else {
-                message.getBody().getMessageBody().copyTo(buf);
-            }
-
-            buf.flip();
-            int len = buf.limit();
-            while (buf.position() != len) {
-                buf.limit(len);
-                int subSize = buf.getInt();
-                buf.limit(buf.position() + subSize);
-                ReceivableMessage<?, ?> msg = plainTextCodec.fromWire(buf);
-                if (msg != null) {
-                    handleReceive(msg);
-                } else {
-                    buf.position(buf.limit());                    
-                }
-            }
-        }
-    };
+    @Handler
+    private void handleMessage(ChannelEncryptRequest message) throws IOException {
+        log.info("got encryption request for universe {}, protocol version {}", message.getBody().getUniverse(), message.getBody().getProtocolVersion());
+        aesCodec = new AESCodec(message.getBody().getUniverse());
+        ChannelEncryptResponse resp = new ChannelEncryptResponse();
+        resp.getBody().setProtocolVersion(message.getBody().getProtocolVersion());
+        resp.getBody().setBlockLength(AESCodec.BLOCK_SIZE);
+        resp.getBody().setKey(aesCodec.getEncryptedKey());
+        send(resp);
+    }
     
-    final MessageHandler<ClientUpdateMachineAuth> updateMachineAuthHandler = new MessageHandler<ClientUpdateMachineAuth>() {
-        public void handleMessage(ClientUpdateMachineAuth message) throws IOException {
-            dumpMessage("ClientUpdateMachineAuth:", message);
+    @Handler
+    private void handleMessage(ChannelEncryptResult message) throws IOException {
+        if (message.getBody().getResult() == EResult.OK) {
+            log.info("encryption established");
+            encryptionActive = true;
+
+            ClientLogon lm = new ClientLogon();
+
+            // lm.getBody().setObfustucatedPrivateIp(ByteBuffer.wrap(((InetSocketAddress)
+            // channel.getLocalAddress()).getAddress().getAddress()).getInt()
+            // & 0xBAADF00D);
+
+            Properties p = new Properties();
             try {
-                MessageDigest md = MessageDigest.getInstance("SHA-1");
-                byte[] digest = md.digest(message.getBody().getBytes().toByteArray());
-                
-                ClientUpdateMachineAuthResponse r = new ClientUpdateMachineAuthResponse();
-                r.getHeader().setJobidTarget(message.getHeader().getJobidSource());
-                r.getBody().setShaFile(ByteString.copyFrom(digest));
-                r.getBody().setEresult(EResult.OK.v());
-                
-                log.info("sentry={}", Util.dumpSHA1(digest));
+                p.load(getClass().getResourceAsStream("/credentials.properties"));
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            lm.getBody().setAccountName(p.getProperty("user"));
+            lm.getBody().setPassword(p.getProperty("pass"));
+            String authCode = p.getProperty("authCode");
+            if (authCode != null) {
+                lm.getBody().setAuthCode(authCode);
+            }
+            String sentry = p.getProperty("sentry");
+            if (sentry != null) {
+                lm.getBody().setShaSentryfile(ByteString.copyFrom(Util.restoreSHA1(sentry)));
+                lm.getBody().setEresultSentryfile(EResult.OK.v());
+            } else {
+                lm.getBody().setEresultSentryfile(EResult.FileNotFound.v());
+            }
+            lm.getBody().setProtocolVersion(65575);
 
-                send(r);
-                
-            } catch (NoSuchAlgorithmException e) {
-                throw new IOException(e);
-            } 
-        }
-    };
+            // log.info("{}", lm.getHeader().build());
+            // log.info("{}", lm.getBody().build());
+            //
+            // ByteBuffer msgBuf = getNewBuffer();
+            // msgBuf.position(4);
+            // msgBuf.putInt(MAGIC);
+            // //plainTextCodec.toWire(lm, msgBuf);
+            // encryptionCodec.toWire(lm, msgBuf);
+            // msgBuf.putInt(0, msgBuf.position() - 8);
+            // msgBuf.flip();
+            // log.info("sending data: {}",
+            // Util.convertByteBufferToString(msgBuf, msgBuf.limit()));
 
-    final MessageHandler<ClientLogonResponse> logonResultHandler = new MessageHandler<ClientLogonResponse>() {
-        public void handleMessage(ClientLogonResponse message) {
-            dumpMessage("login response:", message);
+            send(lm);
+
+        } else {
+            log.error("failed to establish encryption, server said '{}'", message.getBody().getResult());
         }
-    };
+    }
+
+    @Handler
+    private void handleMessage(Multi message) throws IOException {
+        ByteBuffer buf = Util.getNewBuffer();
+        if (message.getBody().getSizeUnzipped() > 0) {
+            ZipInputStream s = new ZipInputStream(message.getBody().getMessageBody().newInput());
+            s.getNextEntry();
+            int v;
+            while ((v = s.read()) != -1) {
+                buf.put((byte) v);
+            }
+        } else {
+            message.getBody().getMessageBody().copyTo(buf);
+        }
+
+        buf.flip();
+        int len = buf.limit();
+        while (buf.position() != len) {
+            buf.limit(len);
+            int subSize = buf.getInt();
+            buf.limit(buf.position() + subSize);
+            ReceivableMessage<?, ?> msg = plainTextCodec.fromWire(buf);
+            if (msg != null) {
+                handleReceive(msg);
+            } else {
+                buf.position(buf.limit());                    
+            }
+        }
+    }
+    
+    @Handler
+    private void handleMessage(ClientUpdateMachineAuth message) throws IOException {
+        dumpMessage("ClientUpdateMachineAuth:", message);
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-1");
+            byte[] digest = md.digest(message.getBody().getBytes().toByteArray());
+            
+            ClientUpdateMachineAuthResponse r = new ClientUpdateMachineAuthResponse();
+            r.getHeader().setJobidTarget(message.getHeader().getJobidSource());
+            r.getBody().setShaFile(ByteString.copyFrom(digest));
+            r.getBody().setEresult(EResult.OK.v());
+            
+            log.info("sentry={}", Util.dumpSHA1(digest));
+
+            send(r);
+            
+        } catch (NoSuchAlgorithmException e) {
+            throw new IOException(e);
+        } 
+    }
+
+    @Handler
+    public void handleMessage(ClientLogonResponse message) {
+        dumpMessage("login response:", message);
+    }
 
 }
