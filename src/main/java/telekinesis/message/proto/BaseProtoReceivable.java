@@ -33,7 +33,7 @@ public abstract class BaseProtoReceivable<B extends GeneratedMessage> extends Ba
     }
 
     @Override
-    public void deserialize(ByteBuffer buf) throws IOException {
+    public void decodeFrom(ByteBuffer buf) throws IOException {
         byte[] arr = null;
 
         arr = new byte[buf.getInt()];

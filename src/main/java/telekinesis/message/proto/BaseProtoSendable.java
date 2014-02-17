@@ -23,7 +23,7 @@ public abstract class BaseProtoSendable<B extends GeneratedMessage.Builder<?>> e
     }
 
     @Override
-    public void serialize(ByteBuffer buf) {
+    public void encodeTo(ByteBuffer buf) {
         byte[] arr = null;
         arr = getHeader().build().toByteArray();
         buf.putInt(arr.length);

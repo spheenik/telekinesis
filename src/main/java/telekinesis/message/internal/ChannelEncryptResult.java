@@ -2,7 +2,7 @@ package telekinesis.message.internal;
 
 import java.nio.ByteBuffer;
 
-import telekinesis.message.FromWire;
+import telekinesis.message.Decodable;
 import telekinesis.message.annotations.RegisterMessage;
 import telekinesis.model.EMsg;
 import telekinesis.model.EResult;
@@ -15,7 +15,7 @@ public class ChannelEncryptResult extends BaseInternalReceivable<ChannelEncryptR
         setBody(new Body());
     }
 
-    public static class Body implements FromWire {
+    public static class Body implements Decodable {
         private EResult result = EResult.Invalid;
 
         public EResult getResult() {
@@ -26,7 +26,7 @@ public class ChannelEncryptResult extends BaseInternalReceivable<ChannelEncryptR
             this.result = result;
         }
 
-        public void deserialize(ByteBuffer buf) {
+        public void decodeFrom(ByteBuffer buf) {
             result = EResult.f(buf.getInt());
         }
 

@@ -3,7 +3,7 @@ package telekinesis.message.internal;
 import java.nio.ByteBuffer;
 import java.util.zip.CRC32;
 
-import telekinesis.message.ToWire;
+import telekinesis.message.Encodable;
 import telekinesis.message.annotations.RegisterMessage;
 import telekinesis.model.EMsg;
 
@@ -15,7 +15,7 @@ public class ChannelEncryptResponse extends BaseInternalSendable<ChannelEncryptR
         setBody(new Body());
     }
 
-    public static class Body implements ToWire {
+    public static class Body implements Encodable {
         
         private int protocolVersion;
         private byte[] key;
@@ -36,7 +36,7 @@ public class ChannelEncryptResponse extends BaseInternalSendable<ChannelEncryptR
             this.key = key;
         }
 
-        public void serialize(ByteBuffer buf) {
+        public void encodeTo(ByteBuffer buf) {
             buf.putInt(protocolVersion);
             buf.putInt(128);
             buf.put(key);

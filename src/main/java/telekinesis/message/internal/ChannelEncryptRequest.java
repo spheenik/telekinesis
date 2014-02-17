@@ -2,7 +2,7 @@ package telekinesis.message.internal;
 
 import java.nio.ByteBuffer;
 
-import telekinesis.message.FromWire;
+import telekinesis.message.Decodable;
 import telekinesis.message.annotations.RegisterMessage;
 import telekinesis.model.EMsg;
 import telekinesis.model.EUniverse;
@@ -15,7 +15,7 @@ public class ChannelEncryptRequest extends BaseInternalReceivable<ChannelEncrypt
         setBody(new Body());
     }
 
-    public static class Body implements FromWire {
+    public static class Body implements Decodable {
 
         private int protocolVersion = 1;
         private EUniverse universe;
@@ -36,7 +36,7 @@ public class ChannelEncryptRequest extends BaseInternalReceivable<ChannelEncrypt
             this.universe = universe;
         }
 
-        public void deserialize(ByteBuffer buf) {
+        public void decodeFrom(ByteBuffer buf) {
             protocolVersion = buf.getInt();
             universe = EUniverse.f(buf.getInt());
         }

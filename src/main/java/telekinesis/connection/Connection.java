@@ -346,7 +346,7 @@ public class Connection {
 
         public void toWire(TransmittableMessage<?, ?> msg, ByteBuffer dstBuf) throws IOException {
             dstBuf.putInt(MessageRegistry.getWireCodeForClass(msg.getClass()));
-            msg.serialize(dstBuf);
+            msg.encodeTo(dstBuf);
         }
 
         public ReceivableMessage<?, ?> fromWire(ByteBuffer srcBuf) throws IOException {
@@ -355,7 +355,7 @@ public class Connection {
             wireLog.debug("got plaintext message of type {}", eMsg);
             ReceivableMessage<?, ?> msg = (ReceivableMessage<?, ?>) MessageRegistry.forEMsg(eMsg);
             if (msg != null) {
-                msg.deserialize(srcBuf);
+                msg.decodeFrom(srcBuf);
             } else {
                 srcBuf.position(srcBuf.limit());
             }
@@ -383,7 +383,7 @@ public class Connection {
                 ByteBuffer srcBuf = getNewBuffer();
                 
                 srcBuf.putInt(MessageRegistry.getWireCodeForClass(msg.getClass()));
-                msg.serialize(srcBuf);
+                msg.encodeTo(srcBuf);
 
                 srcBuf.flip();
                 // encode message
@@ -417,7 +417,7 @@ public class Connection {
                 wireLog.debug("got encrypted message of type {}", eMsg);
                 ReceivableMessage<?, ?> msg = (ReceivableMessage<?, ?>) MessageRegistry.forEMsg(eMsg);
                 if (msg != null) {
-                    msg.deserialize(dstBuf);
+                    msg.decodeFrom(dstBuf);
                 }                
                 return msg;
             } catch (GeneralSecurityException e) {
