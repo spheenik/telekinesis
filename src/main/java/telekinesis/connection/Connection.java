@@ -24,8 +24,6 @@ import org.xnio.conduits.ConduitStreamSourceChannel;
 import telekinesis.connection.codec.AESCodec;
 import telekinesis.connection.codec.MessageCodec;
 import telekinesis.connection.codec.PlainTextCodec;
-import telekinesis.crypto.KeyDictionary;
-import telekinesis.crypto.RSACrypto;
 import telekinesis.message.Message;
 import telekinesis.message.MessageHandler;
 import telekinesis.message.ReceivableMessage;
@@ -203,11 +201,11 @@ public class Connection {
     final MessageHandler<ChannelEncryptRequest> encryptRequestHandler = new MessageHandler<ChannelEncryptRequest>() {
         public void handleMessage(ChannelEncryptRequest message) throws IOException {
             log.info("got encryption request for universe {}, protocol version {}", message.getBody().getUniverse(), message.getBody().getProtocolVersion());
-            aesCodec = new AESCodec();
+            aesCodec = new AESCodec(message.getBody().getUniverse());
             ChannelEncryptResponse resp = new ChannelEncryptResponse();
             resp.getBody().setProtocolVersion(message.getBody().getProtocolVersion());
             resp.getBody().setBlockLength(AESCodec.BLOCK_SIZE);
-            resp.getBody().setKey(new RSACrypto(KeyDictionary.getPublicKey(message.getBody().getUniverse())).encrypt(aesCodec.getEncodedKey()));
+            resp.getBody().setKey(aesCodec.getEncryptedKey());
             send(resp);
         }
     };
