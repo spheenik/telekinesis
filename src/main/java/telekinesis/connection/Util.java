@@ -1,12 +1,19 @@
 package telekinesis.connection;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 
 public class Util {
 
     private static final char[] hexArray = "0123456789ABCDEF".toCharArray();
 
+    public static ByteBuffer getNewBuffer() {
+        ByteBuffer result = ByteBuffer.allocate(8192);
+        result.order(ByteOrder.LITTLE_ENDIAN);
+        return result;
+    }
+    
     public static String convertByteArrayToString(byte[] bytes) {
         char[] hexChars = new char[bytes.length * 3];
         for (int j = 0; j < bytes.length; j++) {

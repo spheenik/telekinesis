@@ -18,6 +18,7 @@ public class ChannelEncryptResponse extends BaseInternalSendable<ChannelEncryptR
     public static class Body implements Encodable {
         
         private int protocolVersion;
+        private int blockLength;
         private byte[] key;
 
         public int getProtocolVersion() {
@@ -26,6 +27,14 @@ public class ChannelEncryptResponse extends BaseInternalSendable<ChannelEncryptR
 
         public void setProtocolVersion(int protocolVersion) {
             this.protocolVersion = protocolVersion;
+        }
+        
+        public int getBlockLength() {
+            return blockLength;
+        }
+
+        public void setBlockLength(int blockLength) {
+            this.blockLength = blockLength;
         }
 
         public byte[] getKey() {
@@ -38,7 +47,7 @@ public class ChannelEncryptResponse extends BaseInternalSendable<ChannelEncryptR
 
         public void encodeTo(ByteBuffer buf) {
             buf.putInt(protocolVersion);
-            buf.putInt(128);
+            buf.putInt(blockLength);
             buf.put(key);
             CRC32 crc = new CRC32();
             crc.update(key);
