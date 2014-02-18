@@ -7,7 +7,7 @@ import java.util.Set;
 
 import org.reflections.ReflectionUtils;
 
-import telekinesis.annotations.Handler;
+import telekinesis.annotations.MessageHandler;
 import telekinesis.message.ReceivableMessage;
 
 public class HandlerRegistry {
@@ -21,7 +21,7 @@ public class HandlerRegistry {
             Map<Class<? extends ReceivableMessage<?, ?>>, Method> result = super.get(key);
             if (result == null) {
                 result = new HashMap<Class<? extends ReceivableMessage<?, ?>>, Method>();
-                Set<Method> handlers = ReflectionUtils.getAllMethods(key, ReflectionUtils.withAnnotation(Handler.class));
+                Set<Method> handlers = ReflectionUtils.getAllMethods(key, ReflectionUtils.withAnnotation(MessageHandler.class));
                 for (Method h : handlers) {
                     Class<? extends ReceivableMessage<?, ?>> handledMessageClass = (Class<? extends ReceivableMessage<?, ?>>) h.getParameterTypes()[0];
                     h.setAccessible(true);

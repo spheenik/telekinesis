@@ -5,7 +5,6 @@ import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Properties;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.zip.ZipInputStream;
@@ -21,10 +20,13 @@ import org.xnio.XnioWorker;
 import org.xnio.conduits.ConduitStreamSinkChannel;
 import org.xnio.conduits.ConduitStreamSourceChannel;
 
-import telekinesis.annotations.Handler;
+import telekinesis.annotations.MessageHandler;
 import telekinesis.connection.codec.AESCodec;
 import telekinesis.connection.codec.MessageCodec;
 import telekinesis.connection.codec.PlainTextCodec;
+import telekinesis.event.Event;
+import telekinesis.event.Event.EventHandler;
+import telekinesis.event.EventEmitter;
 import telekinesis.message.Message;
 import telekinesis.message.MessageRegistry;
 import telekinesis.message.ReceivableMessage;
@@ -32,7 +34,6 @@ import telekinesis.message.TransmittableMessage;
 import telekinesis.message.internal.ChannelEncryptRequest;
 import telekinesis.message.internal.ChannelEncryptResponse;
 import telekinesis.message.internal.ChannelEncryptResult;
-import telekinesis.message.proto.ClientLogon;
 import telekinesis.message.proto.ClientLogonResponse;
 import telekinesis.message.proto.ClientUpdateMachineAuth;
 import telekinesis.message.proto.ClientUpdateMachineAuthResponse;
@@ -41,8 +42,13 @@ import telekinesis.model.EResult;
 
 import com.google.protobuf.ByteString;
 
-public class Connection {
+public class Connection implements EventEmitter {
 
+    public interface CONNECTION_STATE_CHANGED extends EventHandler.H1<ConnectionState> {
+        public void handle(ConnectionState newState);
+    };
+    public interface CONNECTION_ESTABLISHED extends EventHandler.H0 {};
+    
     private static final int MAGIC = 0x31305456; // "VT01"
 
     private final Logger log = LoggerFactory.getLogger(getClass());
@@ -72,11 +78,11 @@ public class Connection {
         initBufs();
         XnioWorker worker = Xnio.getInstance().createWorker(OptionMap.EMPTY);
         worker.openStreamConnection(address, openListener, OptionMap.EMPTY);
-        connectionState = ConnectionState.CONNECTING;
+        changeConnectionState(ConnectionState.CONNECTING);
     }
 
     public void disconnect() throws IOException {
-        connectionState = ConnectionState.DISCONNECTING;
+        changeConnectionState(ConnectionState.DISCONNECTING);
         channel.getSourceChannel().shutdownReads();
         channel.getSinkChannel().shutdownWrites();
         channel.getSinkChannel().flush();
@@ -94,6 +100,11 @@ public class Connection {
         if (!channel.getSinkChannel().isWriteResumed()) {
             channel.getSinkChannel().resumeWrites();
         }
+    }
+    
+    private void changeConnectionState(ConnectionState newState) {
+        connectionState = newState;
+        Event.emit(this, CONNECTION_STATE_CHANGED.class, newState);
     }
 
     private void initBufs() {
@@ -122,7 +133,7 @@ public class Connection {
     private final ChannelListener<StreamConnection> openListener = new ChannelListener<StreamConnection>() {
         public void handleEvent(StreamConnection channel) {
             log.info("connection to {} established", channel.getPeerAddress());
-            connectionState = ConnectionState.CONNECTED;
+            changeConnectionState(ConnectionState.CONNECTED);
             Connection.this.channel = channel;
             channel.setCloseListener(closeListener);
             channel.getSourceChannel().setReadListener(readListener);
@@ -134,7 +145,7 @@ public class Connection {
     private final ChannelListener<StreamConnection> closeListener = new ChannelListener<StreamConnection>() {
         public void handleEvent(StreamConnection channel) {
             log.info("connection to {} {}", channel.getPeerAddress(), connectionState == ConnectionState.DISCONNECTING ? "closed" : "lost");
-            connectionState = ConnectionState.DISCONNECTED;
+            changeConnectionState(ConnectionState.DISCONNECTED);
             channel.getWorker().shutdown();
         }
     };
@@ -186,7 +197,7 @@ public class Connection {
         }
     };
 
-    @Handler
+    @MessageHandler
     private void handleMessage(ChannelEncryptRequest message) throws IOException {
         log.info("got encryption request for universe {}, protocol version {}", message.getBody().getUniverse(), message.getBody().getProtocolVersion());
         aesCodec = new AESCodec(message.getBody().getUniverse());
@@ -197,61 +208,18 @@ public class Connection {
         send(resp);
     }
     
-    @Handler
+    @MessageHandler
     private void handleMessage(ChannelEncryptResult message) throws IOException {
         if (message.getBody().getResult() == EResult.OK) {
             log.info("encryption established");
             encryptionActive = true;
-
-            ClientLogon lm = new ClientLogon();
-
-            // lm.getBody().setObfustucatedPrivateIp(ByteBuffer.wrap(((InetSocketAddress)
-            // channel.getLocalAddress()).getAddress().getAddress()).getInt()
-            // & 0xBAADF00D);
-
-            Properties p = new Properties();
-            try {
-                p.load(getClass().getResourceAsStream("/credentials.properties"));
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-            lm.getBody().setAccountName(p.getProperty("user"));
-            lm.getBody().setPassword(p.getProperty("pass"));
-            String authCode = p.getProperty("authCode");
-            if (authCode != null) {
-                lm.getBody().setAuthCode(authCode);
-            }
-            String sentry = p.getProperty("sentry");
-            if (sentry != null) {
-                lm.getBody().setShaSentryfile(ByteString.copyFrom(Util.restoreSHA1(sentry)));
-                lm.getBody().setEresultSentryfile(EResult.OK.v());
-            } else {
-                lm.getBody().setEresultSentryfile(EResult.FileNotFound.v());
-            }
-            lm.getBody().setProtocolVersion(65575);
-
-            // log.info("{}", lm.getHeader().build());
-            // log.info("{}", lm.getBody().build());
-            //
-            // ByteBuffer msgBuf = getNewBuffer();
-            // msgBuf.position(4);
-            // msgBuf.putInt(MAGIC);
-            // //plainTextCodec.toWire(lm, msgBuf);
-            // encryptionCodec.toWire(lm, msgBuf);
-            // msgBuf.putInt(0, msgBuf.position() - 8);
-            // msgBuf.flip();
-            // log.info("sending data: {}",
-            // Util.convertByteBufferToString(msgBuf, msgBuf.limit()));
-
-            send(lm);
-
+            Event.emit(this, CONNECTION_ESTABLISHED.class);
         } else {
             log.error("failed to establish encryption, server said '{}'", message.getBody().getResult());
         }
     }
 
-    @Handler
+    @MessageHandler
     private void handleMessage(Multi message) throws IOException {
         ByteBuffer buf = Util.getNewBuffer();
         if (message.getBody().getSizeUnzipped() > 0) {
@@ -282,7 +250,7 @@ public class Connection {
         }
     }
     
-    @Handler
+    @MessageHandler
     private void handleMessage(ClientUpdateMachineAuth message) throws IOException {
         dumpMessage("ClientUpdateMachineAuth:", message);
         try {
@@ -303,7 +271,7 @@ public class Connection {
         } 
     }
 
-    @Handler
+    @MessageHandler
     public void handleMessage(ClientLogonResponse message) {
         dumpMessage("login response:", message);
     }
