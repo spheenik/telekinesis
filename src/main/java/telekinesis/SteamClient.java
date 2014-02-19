@@ -58,6 +58,7 @@ public class SteamClient implements EventEmitter {
                 case CLOSED:
                 case LOST:
                 case BROKEN:
+                    Event.deregisterEmitter(connection);
                     connection = null;
                     exitEventLoop = true;
                     break;

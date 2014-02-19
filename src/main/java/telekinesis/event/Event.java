@@ -4,6 +4,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingDeque;
@@ -103,6 +104,16 @@ public class Event {
             }
             
         });
+    }
+    
+    public static void deregisterEmitter(final EventEmitter emitter) {
+        Iterator<Map.Entry<Target<?>, Set<Invoker>>> iter = REGISTRY.entrySet().iterator();
+        while(iter.hasNext()) {
+            Map.Entry<Target<?>, Set<Invoker>> entry = iter.next();
+            if (entry.getKey().emitter == emitter) {
+                iter.remove();
+            }
+        }
     }
     
     public static <T extends EventHandler> void passthrough(final EventEmitter emitter, final Class<T> handlerClass, final EventEmitter target) {
