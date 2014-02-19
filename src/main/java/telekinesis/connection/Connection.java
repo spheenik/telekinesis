@@ -47,7 +47,6 @@ public class Connection implements EventEmitter {
     public interface CONNECTION_STATE_CHANGED extends EventHandler.H1<ConnectionState> {
         public void handle(ConnectionState newState);
     };
-    public interface CONNECTION_ESTABLISHED extends EventHandler.H0 {};
     
     private static final int MAGIC = 0x31305456; // "VT01"
 
@@ -102,6 +101,13 @@ public class Connection implements EventEmitter {
         }
     }
     
+    public void sendRaw(ByteBuffer msgBuf) throws IOException {
+        out.add(msgBuf);
+        if (!channel.getSinkChannel().isWriteResumed()) {
+            channel.getSinkChannel().resumeWrites();
+        }
+    }
+    
     private void changeConnectionState(ConnectionState newState) {
         connectionState = newState;
         Event.emit(this, CONNECTION_STATE_CHANGED.class, newState);
@@ -132,7 +138,7 @@ public class Connection implements EventEmitter {
 
     private final ChannelListener<StreamConnection> openListener = new ChannelListener<StreamConnection>() {
         public void handleEvent(StreamConnection channel) {
-            log.info("connection to {} established", channel.getPeerAddress());
+            log.info("connected to {}", channel.getPeerAddress());
             changeConnectionState(ConnectionState.CONNECTED);
             Connection.this.channel = channel;
             channel.setCloseListener(closeListener);
@@ -144,8 +150,8 @@ public class Connection implements EventEmitter {
 
     private final ChannelListener<StreamConnection> closeListener = new ChannelListener<StreamConnection>() {
         public void handleEvent(StreamConnection channel) {
-            log.info("connection to {} {}", channel.getPeerAddress(), connectionState == ConnectionState.DISCONNECTING ? "closed" : "lost");
-            changeConnectionState(ConnectionState.DISCONNECTED);
+            log.info("connection to peer {}", connectionState == ConnectionState.DISCONNECTING ? "closed" : "lost");
+            changeConnectionState(connectionState == ConnectionState.DISCONNECTING ? ConnectionState.CLOSED : ConnectionState.LOST);
             channel.getWorker().shutdown();
         }
     };
@@ -213,9 +219,10 @@ public class Connection implements EventEmitter {
         if (message.getBody().getResult() == EResult.OK) {
             log.info("encryption established");
             encryptionActive = true;
-            Event.emit(this, CONNECTION_ESTABLISHED.class);
+            changeConnectionState(ConnectionState.ESTABLISHED);
         } else {
             log.error("failed to establish encryption, server said '{}'", message.getBody().getResult());
+            changeConnectionState(ConnectionState.BROKEN);
         }
     }
 

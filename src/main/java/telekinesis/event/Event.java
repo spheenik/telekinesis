@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.TimeUnit;
 
 import org.reflections.ReflectionUtils;
 
@@ -131,14 +132,14 @@ public class Event {
         }
     }
     
-    public static void eventLoop() {
-        while(true) {
-            try {
-                Action a = ACTION_QUEUE.take();
+    public static void executeNextAction() {
+        try {
+            Action a = ACTION_QUEUE.poll(500, TimeUnit.MILLISECONDS);
+            if (a != null) {
                 a.invoker.invoke(a.params);
-            } catch (InterruptedException e) {
             }
+        } catch (InterruptedException e) {
         }
     }
-    
+
 }

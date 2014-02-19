@@ -2,8 +2,9 @@ package telekinesis;
 
 import java.io.IOException;
 import java.util.Properties;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
-import telekinesis.connection.Connection;
 import telekinesis.connection.Util;
 import telekinesis.event.Event;
 import telekinesis.message.proto.ClientLogon;
@@ -11,12 +12,12 @@ import telekinesis.model.EResult;
 
 import com.google.protobuf.ByteString;
 
-
 public class Main {
 
     public static void main(String[] args) {
 
         final SteamClient client = new SteamClient();
+        final ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);
         
         Event.register(client, SteamClient.POST_CONSTRUCT.class, new SteamClient.POST_CONSTRUCT() {
             @Override
@@ -25,15 +26,7 @@ public class Main {
             }
         });
 
-        Event.register(client, SteamClient.PRE_DESTROY.class, new SteamClient.PRE_DESTROY() {
-            @Override
-            public void handle() throws IOException {
-                client.disconnect();
-            }
-        });
-        
-        
-        Event.register(client, Connection.CONNECTION_ESTABLISHED.class, new Connection.CONNECTION_ESTABLISHED() {
+        Event.register(client, SteamClient.CONNECTED.class, new SteamClient.CONNECTED() {
             @Override
             public void handle() throws IOException {
                 ClientLogon lm = new ClientLogon();
@@ -82,8 +75,18 @@ public class Main {
             }
         });
         
-        
+        executor.schedule(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    client.disconnect();
+                } catch (IOException e) {
+                }
+            }
+        }, 10, TimeUnit.SECONDS);
         
         client.run();
+
+        executor.shutdown();
     }
 }
