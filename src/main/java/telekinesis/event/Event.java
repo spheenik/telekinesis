@@ -152,5 +152,14 @@ public class Event {
         } catch (InterruptedException e) {
         }
     }
+    
+    public static void executeRemainingActions() {
+        Action a = null;
+        while ((a = ACTION_QUEUE.poll()) != null) {
+            a.invoker.invoke(a.params);
+        }
+    }
+    
+    
 
 }

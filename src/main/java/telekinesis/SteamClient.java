@@ -15,8 +15,12 @@ import telekinesis.message.TransmittableMessage;
 
 public class SteamClient implements EventEmitter {
     
-    public interface POST_CONSTRUCT extends EventHandler.H0 {};
-    public interface PRE_DESTROY extends EventHandler.H0 {}; 
+    public interface POST_CONSTRUCT extends EventHandler.H1<SteamClient> {
+        public void handle(SteamClient client) throws Exception;        
+    };
+    public interface PRE_DESTROY extends EventHandler.H1<SteamClient> {
+        public void handle(SteamClient client) throws Exception;        
+    };
     public interface CONNECTED extends EventHandler.H0 {}; 
     
     private final Logger log = LoggerFactory.getLogger(getClass());
@@ -26,7 +30,7 @@ public class SteamClient implements EventEmitter {
     
     public void connect() throws IOException {
         connection = new Connection(new InetSocketAddress("146.66.152.12", 27017));
-        Event.register(connection, Connection.CONNECTION_STATE_CHANGED.class, connectionStateHandler); 
+        Event.register(connection, Connection.CONNECTION_STATE_CHANGED.class, connectionStateHandler);
         connection.connect();
     }
     
@@ -39,28 +43,34 @@ public class SteamClient implements EventEmitter {
     }
     
     public void run() {
-        Event.emit(SteamClient.this, POST_CONSTRUCT.class);
+        Scheduler.registerSteamClient(this);
+        Event.emit(SteamClient.this, POST_CONSTRUCT.class, SteamClient.this);
         while(!exitEventLoop) {
             Event.executeNextAction();
         }
-        Event.emit(SteamClient.this, PRE_DESTROY.class);
+        Event.emit(SteamClient.this, PRE_DESTROY.class, SteamClient.this);
+        Event.executeRemainingActions();
     }
     
     private final Connection.CONNECTION_STATE_CHANGED connectionStateHandler = new Connection.CONNECTION_STATE_CHANGED() {
         @Override
-        public void handle(ConnectionState newState) {
+        public void handle(ConnectionState newState) throws IOException {
             log.info("new connection state: {}", newState);
             switch (newState) {
                 case ESTABLISHED:
                     Event.emit(SteamClient.this, CONNECTED.class);
                     break;
                
+                case CONNECTION_TIMEOUT:
                 case CLOSED:
                 case LOST:
                 case BROKEN:
                     Event.deregisterEmitter(connection);
                     connection = null;
                     exitEventLoop = true;
+                    break;
+                    
+                default:
                     break;
             }
         }

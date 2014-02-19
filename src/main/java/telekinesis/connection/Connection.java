@@ -7,6 +7,8 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipInputStream;
 
 import org.slf4j.Logger;
@@ -20,6 +22,7 @@ import org.xnio.XnioWorker;
 import org.xnio.conduits.ConduitStreamSinkChannel;
 import org.xnio.conduits.ConduitStreamSourceChannel;
 
+import telekinesis.Scheduler;
 import telekinesis.annotations.MessageHandler;
 import telekinesis.connection.codec.AESCodec;
 import telekinesis.connection.codec.MessageCodec;
@@ -45,18 +48,18 @@ import com.google.protobuf.ByteString;
 public class Connection implements EventEmitter {
 
     public interface CONNECTION_STATE_CHANGED extends EventHandler.H1<ConnectionState> {
-        public void handle(ConnectionState newState);
+        public void handle(ConnectionState newState) throws Exception;
     };
     
     private static final int MAGIC = 0x31305456; // "VT01"
 
     private final Logger log = LoggerFactory.getLogger(getClass());
-
+    
     private final SocketAddress address;
-
+    
     private final HandlerRegistry handlerRegistry = new HandlerRegistry();
     private final BlockingDeque<ByteBuffer> out = new LinkedBlockingDeque<ByteBuffer>();
-
+    
     private ConnectionState connectionState = ConnectionState.DISCONNECTED;
     private StreamConnection channel;
     private ByteBuffer readBuf = null;
@@ -67,6 +70,7 @@ public class Connection implements EventEmitter {
     private boolean encryptionActive = false;
     
     private ConnectionContext connectionContext = new ConnectionContext();
+    private ScheduledFuture<?> connectWatchdog = null;
     
     public Connection(SocketAddress address) {
         this.address = address;
@@ -75,9 +79,16 @@ public class Connection implements EventEmitter {
     
     public void connect() throws IOException {
         initBufs();
-        XnioWorker worker = Xnio.getInstance().createWorker(OptionMap.EMPTY);
+        final XnioWorker worker = Xnio.getInstance().createWorker(OptionMap.EMPTY);
         worker.openStreamConnection(address, openListener, OptionMap.EMPTY);
         changeConnectionState(ConnectionState.CONNECTING);
+        connectWatchdog = Scheduler.schedule(new Runnable() {
+            @Override
+            public void run() {
+                changeConnectionState(ConnectionState.CONNECTION_TIMEOUT);
+                worker.shutdown();
+            }
+        }, 2, TimeUnit.SECONDS);
     }
 
     public void disconnect() throws IOException {
@@ -86,6 +97,7 @@ public class Connection implements EventEmitter {
         channel.getSinkChannel().shutdownWrites();
         channel.getSinkChannel().flush();
     }
+    
     
     public void send(TransmittableMessage<?, ?> msg) throws IOException {
         msg.prepareTransmission(connectionContext);
@@ -140,6 +152,8 @@ public class Connection implements EventEmitter {
         public void handleEvent(StreamConnection channel) {
             log.info("connected to {}", channel.getPeerAddress());
             changeConnectionState(ConnectionState.CONNECTED);
+            connectWatchdog.cancel(true);
+            connectWatchdog = null;
             Connection.this.channel = channel;
             channel.setCloseListener(closeListener);
             channel.getSourceChannel().setReadListener(readListener);

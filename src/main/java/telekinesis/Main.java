@@ -2,7 +2,6 @@ package telekinesis;
 
 import java.io.IOException;
 import java.util.Properties;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import telekinesis.connection.Util;
@@ -17,11 +16,10 @@ public class Main {
     public static void main(String[] args) {
 
         final SteamClient client = new SteamClient();
-        final ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);
         
         Event.register(client, SteamClient.POST_CONSTRUCT.class, new SteamClient.POST_CONSTRUCT() {
             @Override
-            public void handle() throws IOException {
+            public void handle(SteamClient client) throws IOException {
                 client.connect();
             }
         });
@@ -75,7 +73,7 @@ public class Main {
             }
         });
         
-        executor.schedule(new Runnable() {
+        Scheduler.schedule(new Runnable() {
             @Override
             public void run() {
                 try {
@@ -87,6 +85,6 @@ public class Main {
         
         client.run();
 
-        executor.shutdown();
     }
+    
 }
