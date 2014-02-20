@@ -17,14 +17,14 @@ public class Main {
 
         final SteamClient client = new SteamClient();
         
-        Event.register(client, SteamClient.POST_CONSTRUCT.class, new SteamClient.POST_CONSTRUCT() {
+        Event.register(client, new SteamClient.POST_CONSTRUCT() {
             @Override
             public void handle(SteamClient client) throws IOException {
                 client.connect();
             }
         });
 
-        Event.register(client, SteamClient.CONNECTED.class, new SteamClient.CONNECTED() {
+        Event.register(client, new SteamClient.CONNECTED() {
             @Override
             public void handle() throws IOException {
                 ClientLogon lm = new ClientLogon();

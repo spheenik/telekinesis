@@ -3,8 +3,6 @@ package telekinesis.connection;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ScheduledFuture;
@@ -30,25 +28,22 @@ import telekinesis.connection.codec.PlainTextCodec;
 import telekinesis.event.Event;
 import telekinesis.event.Event.EventHandler;
 import telekinesis.event.EventEmitter;
-import telekinesis.message.Message;
-import telekinesis.message.MessageRegistry;
 import telekinesis.message.ReceivableMessage;
 import telekinesis.message.TransmittableMessage;
 import telekinesis.message.internal.ChannelEncryptRequest;
 import telekinesis.message.internal.ChannelEncryptResponse;
 import telekinesis.message.internal.ChannelEncryptResult;
-import telekinesis.message.proto.ClientLogonResponse;
-import telekinesis.message.proto.ClientUpdateMachineAuth;
-import telekinesis.message.proto.ClientUpdateMachineAuthResponse;
 import telekinesis.message.proto.Multi;
 import telekinesis.model.EResult;
-
-import com.google.protobuf.ByteString;
 
 public class Connection implements EventEmitter {
 
     public interface CONNECTION_STATE_CHANGED extends EventHandler.H1<ConnectionState> {
         public void handle(ConnectionState newState) throws Exception;
+    };
+    
+    public interface MESSAGE_RECEIVED extends EventHandler.H1<ReceivableMessage<?, ?>> {
+        public void handle(ReceivableMessage<?, ?> message) throws Exception;
     };
     
     private static final int MAGIC = 0x31305456; // "VT01"
@@ -57,7 +52,6 @@ public class Connection implements EventEmitter {
     
     private final SocketAddress address;
     
-    private final HandlerRegistry handlerRegistry = new HandlerRegistry();
     private final BlockingDeque<ByteBuffer> out = new LinkedBlockingDeque<ByteBuffer>();
     
     private ConnectionState connectionState = ConnectionState.DISCONNECTED;
@@ -74,7 +68,6 @@ public class Connection implements EventEmitter {
     
     public Connection(SocketAddress address) {
         this.address = address;
-        handlerRegistry.addInstance(this);
     }
     
     public void connect() throws IOException {
@@ -134,18 +127,9 @@ public class Connection implements EventEmitter {
         return encryptionActive ? aesCodec : plainTextCodec;
     }
 
-    private void dumpMessage(String prefix, Message<?, ?> msg) {
-        log.info("{}\nHEADER:\n{}\nBODY:\n{}", prefix, msg.getHeader(), msg.getBody());
-    }
-
     private void handleReceive(ReceivableMessage<?, ?> msg) throws IOException {
-        if (msg != null) {
-            msg.updateContext(connectionContext);
-            if (!handlerRegistry.handle(msg)) {
-                log.warn("unhandled message of type {}", MessageRegistry.getEMsgForClass(msg.getClass()));
-                dumpMessage("", msg);
-            }
-        }
+        msg.updateContext(connectionContext);
+        Event.emit(this, MESSAGE_RECEIVED.class, msg);
     }
 
     private final ChannelListener<StreamConnection> openListener = new ChannelListener<StreamConnection>() {
@@ -184,8 +168,11 @@ public class Connection implements EventEmitter {
                         log.trace("received {} bytes: {}", len + 8, Util.convertByteBufferToString(readBuf, len + 8));
                         readBuf.position(8);
                         ReceivableMessage<?, ?> m = getCodec().fromWire(readBuf);
+                        readBuf.position(readBuf.limit());
                         readBuf.compact();
-                        handleReceive(m);
+                        if (m != null) {
+                            handleReceive(m);
+                        }
                     }
                 }
                 if (n == -1) {
@@ -271,30 +258,4 @@ public class Connection implements EventEmitter {
         }
     }
     
-    @MessageHandler
-    private void handleMessage(ClientUpdateMachineAuth message) throws IOException {
-        dumpMessage("ClientUpdateMachineAuth:", message);
-        try {
-            MessageDigest md = MessageDigest.getInstance("SHA-1");
-            byte[] digest = md.digest(message.getBody().getBytes().toByteArray());
-            
-            ClientUpdateMachineAuthResponse r = new ClientUpdateMachineAuthResponse();
-            r.getHeader().setJobidTarget(message.getHeader().getJobidSource());
-            r.getBody().setShaFile(ByteString.copyFrom(digest));
-            r.getBody().setEresult(EResult.OK.v());
-            
-            log.info("sentry={}", Util.dumpSHA1(digest));
-
-            send(r);
-            
-        } catch (NoSuchAlgorithmException e) {
-            throw new IOException(e);
-        } 
-    }
-
-    @MessageHandler
-    public void handleMessage(ClientLogonResponse message) {
-        dumpMessage("login response:", message);
-    }
-
 }

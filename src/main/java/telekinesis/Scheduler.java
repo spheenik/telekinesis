@@ -25,7 +25,7 @@ public class Scheduler {
     
     public static void registerSteamClient(final SteamClient clientToAdd) {
         steamClients.add(clientToAdd);
-        Event.register(clientToAdd, SteamClient.PRE_DESTROY.class, new SteamClient.PRE_DESTROY() {
+        Event.register(clientToAdd, new SteamClient.PRE_DESTROY() {
             @Override
             public void handle(SteamClient clientToRemove) {
                 Scheduler.steamClients.remove(clientToRemove);

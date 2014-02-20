@@ -2,6 +2,7 @@ package telekinesis.connection;
 
 import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -60,6 +61,16 @@ public class HandlerRegistry {
                 throw new RuntimeException("handler for " + e.getKey().getName() + " already set");
             }
             invokers.put(e.getKey(), new Invoker(instance, e.getValue()));
+        }
+    }
+    
+    public void removeInstance(final Object instance) {
+        Iterator<Map.Entry<Class<? extends ReceivableMessage<?, ?>>, Invoker>> iter = invokers.entrySet().iterator();
+        while (iter.hasNext()) {
+            Map.Entry<Class<? extends ReceivableMessage<?, ?>>, Invoker> e = iter.next();
+            if (e.getValue().instance == instance) {
+                iter.remove();
+            }
         }
     }
     
