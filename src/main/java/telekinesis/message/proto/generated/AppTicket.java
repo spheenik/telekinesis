@@ -8,10 +8,10 @@ public final class AppTicket {
   public static void registerAllExtensions(
       com.google.protobuf.ExtensionRegistry registry) {
   }
-  public interface EncryptedAppTicketOrBuilder
-      extends com.google.protobuf.MessageOrBuilder {
+  public interface EncryptedAppTicketOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:EncryptedAppTicket)
+      com.google.protobuf.MessageOrBuilder {
 
-    // optional uint32 ticket_version_no = 1;
     /**
      * <code>optional uint32 ticket_version_no = 1;</code>
      */
@@ -21,7 +21,6 @@ public final class AppTicket {
      */
     int getTicketVersionNo();
 
-    // optional uint32 crc_encryptedticket = 2;
     /**
      * <code>optional uint32 crc_encryptedticket = 2;</code>
      */
@@ -31,7 +30,6 @@ public final class AppTicket {
      */
     int getCrcEncryptedticket();
 
-    // optional uint32 cb_encrypteduserdata = 3;
     /**
      * <code>optional uint32 cb_encrypteduserdata = 3;</code>
      */
@@ -41,7 +39,6 @@ public final class AppTicket {
      */
     int getCbEncrypteduserdata();
 
-    // optional uint32 cb_encrypted_appownershipticket = 4;
     /**
      * <code>optional uint32 cb_encrypted_appownershipticket = 4;</code>
      */
@@ -51,7 +48,6 @@ public final class AppTicket {
      */
     int getCbEncryptedAppownershipticket();
 
-    // optional bytes encrypted_ticket = 5;
     /**
      * <code>optional bytes encrypted_ticket = 5;</code>
      */
@@ -65,8 +61,9 @@ public final class AppTicket {
    * Protobuf type {@code EncryptedAppTicket}
    */
   public static final class EncryptedAppTicket extends
-      com.google.protobuf.GeneratedMessage
-      implements EncryptedAppTicketOrBuilder {
+      com.google.protobuf.GeneratedMessage implements
+      // @@protoc_insertion_point(message_implements:EncryptedAppTicket)
+      EncryptedAppTicketOrBuilder {
     // Use EncryptedAppTicket.newBuilder() to construct.
     private EncryptedAppTicket(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -177,7 +174,6 @@ public final class AppTicket {
     }
 
     private int bitField0_;
-    // optional uint32 ticket_version_no = 1;
     public static final int TICKET_VERSION_NO_FIELD_NUMBER = 1;
     private int ticketVersionNo_;
     /**
@@ -193,7 +189,6 @@ public final class AppTicket {
       return ticketVersionNo_;
     }
 
-    // optional uint32 crc_encryptedticket = 2;
     public static final int CRC_ENCRYPTEDTICKET_FIELD_NUMBER = 2;
     private int crcEncryptedticket_;
     /**
@@ -209,7 +204,6 @@ public final class AppTicket {
       return crcEncryptedticket_;
     }
 
-    // optional uint32 cb_encrypteduserdata = 3;
     public static final int CB_ENCRYPTEDUSERDATA_FIELD_NUMBER = 3;
     private int cbEncrypteduserdata_;
     /**
@@ -225,7 +219,6 @@ public final class AppTicket {
       return cbEncrypteduserdata_;
     }
 
-    // optional uint32 cb_encrypted_appownershipticket = 4;
     public static final int CB_ENCRYPTED_APPOWNERSHIPTICKET_FIELD_NUMBER = 4;
     private int cbEncryptedAppownershipticket_;
     /**
@@ -241,7 +234,6 @@ public final class AppTicket {
       return cbEncryptedAppownershipticket_;
     }
 
-    // optional bytes encrypted_ticket = 5;
     public static final int ENCRYPTED_TICKET_FIELD_NUMBER = 5;
     private com.google.protobuf.ByteString encryptedTicket_;
     /**
@@ -267,7 +259,8 @@ public final class AppTicket {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized != -1) return isInitialized == 1;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
 
       memoizedIsInitialized = 1;
       return true;
@@ -402,8 +395,9 @@ public final class AppTicket {
      * Protobuf type {@code EncryptedAppTicket}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder>
-       implements telekinesis.message.proto.generated.AppTicket.EncryptedAppTicketOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:EncryptedAppTicket)
+        telekinesis.message.proto.generated.AppTicket.EncryptedAppTicketOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return telekinesis.message.proto.generated.AppTicket.internal_static_EncryptedAppTicket_descriptor;
@@ -552,7 +546,6 @@ public final class AppTicket {
       }
       private int bitField0_;
 
-      // optional uint32 ticket_version_no = 1;
       private int ticketVersionNo_ ;
       /**
        * <code>optional uint32 ticket_version_no = 1;</code>
@@ -585,7 +578,6 @@ public final class AppTicket {
         return this;
       }
 
-      // optional uint32 crc_encryptedticket = 2;
       private int crcEncryptedticket_ ;
       /**
        * <code>optional uint32 crc_encryptedticket = 2;</code>
@@ -618,7 +610,6 @@ public final class AppTicket {
         return this;
       }
 
-      // optional uint32 cb_encrypteduserdata = 3;
       private int cbEncrypteduserdata_ ;
       /**
        * <code>optional uint32 cb_encrypteduserdata = 3;</code>
@@ -651,7 +642,6 @@ public final class AppTicket {
         return this;
       }
 
-      // optional uint32 cb_encrypted_appownershipticket = 4;
       private int cbEncryptedAppownershipticket_ ;
       /**
        * <code>optional uint32 cb_encrypted_appownershipticket = 4;</code>
@@ -684,7 +674,6 @@ public final class AppTicket {
         return this;
       }
 
-      // optional bytes encrypted_ticket = 5;
       private com.google.protobuf.ByteString encryptedTicket_ = com.google.protobuf.ByteString.EMPTY;
       /**
        * <code>optional bytes encrypted_ticket = 5;</code>
@@ -731,7 +720,7 @@ public final class AppTicket {
     // @@protoc_insertion_point(class_scope:EncryptedAppTicket)
   }
 
-  private static com.google.protobuf.Descriptors.Descriptor
+  private static final com.google.protobuf.Descriptors.Descriptor
     internal_static_EncryptedAppTicket_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
@@ -749,27 +738,28 @@ public final class AppTicket {
       "t\022\031\n\021ticket_version_no\030\001 \001(\r\022\033\n\023crc_encr" +
       "yptedticket\030\002 \001(\r\022\034\n\024cb_encrypteduserdat" +
       "a\030\003 \001(\r\022\'\n\037cb_encrypted_appownershiptick" +
-      "et\030\004 \001(\r\022\030\n\020encrypted_ticket\030\005 \001(\014B%\n#te" +
-      "lekinesis.message.proto.generated"
+      "et\030\004 \001(\r\022\030\n\020encrypted_ticket\030\005 \001(\014B0\n#te" +
+      "lekinesis.message.proto.generatedB\tAppTi" +
+      "cket"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
-      new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
-        public com.google.protobuf.ExtensionRegistry assignDescriptors(
-            com.google.protobuf.Descriptors.FileDescriptor root) {
-          descriptor = root;
-          internal_static_EncryptedAppTicket_descriptor =
-            getDescriptor().getMessageTypes().get(0);
-          internal_static_EncryptedAppTicket_fieldAccessorTable = new
-            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-              internal_static_EncryptedAppTicket_descriptor,
-              new java.lang.String[] { "TicketVersionNo", "CrcEncryptedticket", "CbEncrypteduserdata", "CbEncryptedAppownershipticket", "EncryptedTicket", });
-          return null;
-        }
-      };
+        new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
+          public com.google.protobuf.ExtensionRegistry assignDescriptors(
+              com.google.protobuf.Descriptors.FileDescriptor root) {
+            descriptor = root;
+            return null;
+          }
+        };
     com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
         new com.google.protobuf.Descriptors.FileDescriptor[] {
         }, assigner);
+    internal_static_EncryptedAppTicket_descriptor =
+      getDescriptor().getMessageTypes().get(0);
+    internal_static_EncryptedAppTicket_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_EncryptedAppTicket_descriptor,
+        new java.lang.String[] { "TicketVersionNo", "CrcEncryptedticket", "CbEncrypteduserdata", "CbEncryptedAppownershipticket", "EncryptedTicket", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)

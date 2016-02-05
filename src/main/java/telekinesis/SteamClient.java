@@ -1,154 +1,160 @@
 package telekinesis;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-
+import com.google.protobuf.ByteString;
+import io.netty.channel.EventLoopGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import telekinesis.annotations.MessageHandler;
-import telekinesis.connection.Connection;
 import telekinesis.connection.ConnectionState;
-import telekinesis.connection.HandlerRegistry;
-import telekinesis.connection.Util;
-import telekinesis.event.Event;
-import telekinesis.event.Event.EventHandler;
-import telekinesis.event.EventEmitter;
-import telekinesis.message.MessageRegistry;
-import telekinesis.message.ReceivableMessage;
-import telekinesis.message.TransmittableMessage;
-import telekinesis.message.proto.ClientLogonResponse;
-import telekinesis.message.proto.ClientServersAvailable;
-import telekinesis.message.proto.ClientSessionToken;
-import telekinesis.message.proto.ClientUpdateMachineAuth;
-import telekinesis.message.proto.ClientUpdateMachineAuthResponse;
-import telekinesis.model.EResult;
+import telekinesis.connection.IdleTimeoutFunction;
+import telekinesis.connection.SteamConnection;
+import telekinesis.message.proto.generated.SM_ClientServer;
+import telekinesis.model.SteamClientDelegate;
+import telekinesis.model.steam.EMsg;
+import telekinesis.model.steam.EResult;
+import telekinesis.registry.MessageRegistry;
 
-import com.google.protobuf.ByteString;
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 
-public class SteamClient implements EventEmitter {
-    
-    public interface POST_CONSTRUCT extends EventHandler.H1<SteamClient> {
-        public void handle(SteamClient client) throws Exception;        
-    };
-    public interface PRE_DESTROY extends EventHandler.H1<SteamClient> {
-        public void handle(SteamClient client) throws Exception;        
-    };
-    public interface CONNECTED extends EventHandler.H0 {}; 
-    
-    private final Logger log = LoggerFactory.getLogger(getClass());
+public class SteamClient extends Publisher<SteamClient> {
 
-    private boolean exitEventLoop = false;
-    
-    private HandlerRegistry handlerRegistry = null;
-    private Connection connection = null;
-    private User user;
-    
-    public void connect() throws IOException {
-        connection = new Connection(new InetSocketAddress("146.66.152.12", 27017));
-        user = new User(this);
-        handlerRegistry = new HandlerRegistry();
-        handlerRegistry.addInstance(this);
-        handlerRegistry.addInstance(connection);
-        handlerRegistry.addInstance(user);
-        Event.register(connection, connectionStateHandler);
-        Event.register(connection, messageReceivedHandler);
-        connection.connect();
+    private static final MessageRegistry HANDLED_MESSAGES = new MessageRegistry()
+            .registerProto(EMsg.ClientLogon.v(), SM_ClientServer.CMsgClientLogon.class)
+            .registerProto(EMsg.ClientLogOnResponse.v(), SM_ClientServer.CMsgClientLogonResponse.class)
+            .registerProto(EMsg.ClientUpdateMachineAuth.v(), SM_ClientServer.CMsgClientUpdateMachineAuth.class)
+            .registerProto(EMsg.ClientUpdateMachineAuthResponse.v(), SM_ClientServer.CMsgClientUpdateMachineAuthResponse.class)
+            .registerProto(EMsg.ClientAccountInfo.v(), SM_ClientServer.CMsgClientAccountInfo.class)
+            .registerProto(EMsg.ClientNewLoginKey.v(), SM_ClientServer.CMsgClientNewLoginKey.class)
+            .registerProto(EMsg.ClientNewLoginKeyAccepted.v(), SM_ClientServer.CMsgClientNewLoginKeyAccepted.class)
+            .registerProto(EMsg.ClientHeartBeat.v(), SM_ClientServer.CMsgClientHeartBeat.class);
+
+    private final Logger log;
+    private final EventLoopGroup workerGroup;
+    private final SteamClientDelegate credentials;
+
+    private SteamConnection connection;
+    private IdleTimeoutFunction heartbeatFunction;
+
+    public SteamClient(EventLoopGroup workerGroup, String id, SteamClientDelegate credentials) {
+        this.workerGroup = workerGroup;
+        this.log = LoggerFactory.getLogger(id);
+        this.credentials = credentials;
     }
-    
-    public void disconnect() throws IOException {
+
+    public void connect() {
+        connection = new SteamConnection(workerGroup, log.getName() + "-conn");
+        connection.addRegistry(HANDLED_MESSAGES);
+        connection.connect("208.78.164.9", 27018);
+        connection.subscribe(ConnectionState.class, this::handleConnectionStateChange);
+        connection.subscribe(SM_ClientServer.CMsgClientLogonResponse.class, this::handleClientLogonResponse);
+        connection.subscribe(SM_ClientServer.CMsgClientUpdateMachineAuth.class, this::handleClientUpdateMachineAuth);
+        connection.subscribe(SM_ClientServer.CMsgClientAccountInfo.class, this::handleClientAccountInfo);
+        connection.subscribe(SM_ClientServer.CMsgClientNewLoginKey.class, this::handleClientNewLoginKey);
+    }
+
+    public void disconnect() {
+        if (heartbeatFunction != null) {
+            heartbeatFunction.cancel();
+            heartbeatFunction = null;
+        }
         connection.disconnect();
     }
 
-    public void send(TransmittableMessage<?, ?> msg) throws IOException {
-        connection.send(msg);
-    }
-    
-    public void run() {
-        Scheduler.registerSteamClient(this);
-        Event.emit(SteamClient.this, POST_CONSTRUCT.class, SteamClient.this);
-        while(!exitEventLoop) {
-            Event.executeNextAction();
+    public void send(Object body) {
+        if (heartbeatFunction != null) {
+            heartbeatFunction.reset();
         }
-        Event.emit(SteamClient.this, PRE_DESTROY.class, SteamClient.this);
-        Event.executeRemainingActions();
-    }
-    
-    public User getUser() {
-        return user;
-    }
-    
-    @MessageHandler
-    public void handleMessage(ClientServersAvailable message) {
-        //message.dumpToLog(log, "ClientServersAvailable:");
+        connection.send(body);
     }
 
-    @MessageHandler
-    public void handleMessage(ClientLogonResponse message) {
-        message.dumpToLog(log, "ClientLogonResponse:");
-    }
-    
-    @MessageHandler
-    public void handleMessage(ClientSessionToken message) {
-        message.dumpToLog(log, "ClientSessionToken:");
+    // TODO: only for testing, remove this
+    public boolean isConnectionAlive() {
+        return connection != null;
     }
 
-    @MessageHandler
-    private void handleMessage(ClientUpdateMachineAuth message) throws IOException {
-        message.dumpToLog(log, "ClientUpdateMachineAuth:");
+    protected void performLogon() throws IOException {
+        log.info("performing logon for {}", credentials.getAccountName());
+        SM_ClientServer.CMsgClientLogon.Builder logon = SM_ClientServer.CMsgClientLogon.newBuilder();
+        logon.setProtocolVersion(65575);
+        logon.setAccountName(credentials.getAccountName());
+        logon.setPassword(credentials.getPassword());
+        byte[] sentrySha = credentials.getSentrySha1();
+        if (sentrySha != null) {
+            logon.setEresultSentryfile(EResult.OK.v());
+            logon.setShaSentryfile(ByteString.copyFrom(sentrySha));
+        } else {
+            logon.setEresultSentryfile(EResult.FileNotFound.v());
+        }
+        connection.send(logon);
+    }
+
+    protected void handleConnectionStateChange(SteamConnection.SteamConnectionContext ctx, ConnectionState newState) throws IOException {
+        switch(newState) {
+            case ESTABLISHED:
+                performLogon();
+                break;
+            case BROKEN:
+                connection.disconnect();
+                break;
+            case CONNECTION_FAILED:
+            case CLOSED:
+            case LOST:
+                connection = null;
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    protected void handleClientLogonResponse(SteamConnection.SteamConnectionContext ctx, SM_ClientServer.CMsgClientLogonResponse msg) {
+        log.info("received logon response");
+        log.info(msg.toString());
+        if (msg.getEresult() == EResult.OK.v()) {
+            heartbeatFunction = new IdleTimeoutFunction(workerGroup, msg.getOutOfGameHeartbeatSeconds()) {
+                @Override
+                protected void onTimout() {
+                    System.out.println("HEARTBEAT");
+                    SM_ClientServer.CMsgClientHeartBeat.Builder msg = SM_ClientServer.CMsgClientHeartBeat.newBuilder();
+                    connection.send(msg);
+                }
+            };
+        }
+    }
+
+    protected void handleClientUpdateMachineAuth(SteamConnection.SteamConnectionContext ctx, SM_ClientServer.CMsgClientUpdateMachineAuth msg) throws IOException, NoSuchAlgorithmException {
+        log.info("received update machine auth request");
+        log.info(msg.toString());
+
+        if (msg.getCubtowrite() != msg.getBytes().size()) {
+            throw new IOException("assert failed: bytes.size != cubtowrite");
+        }
+
+        SM_ClientServer.CMsgClientUpdateMachineAuthResponse.Builder builder = SM_ClientServer.CMsgClientUpdateMachineAuthResponse.newBuilder();
         try {
-            MessageDigest md = MessageDigest.getInstance("SHA-1");
-            byte[] digest = md.digest(message.getBody().getBytes().toByteArray());
-            
-            ClientUpdateMachineAuthResponse r = new ClientUpdateMachineAuthResponse();
-            r.getHeader().setJobidTarget(message.getHeader().getJobidSource());
-            r.getBody().setShaFile(ByteString.copyFrom(digest));
-            r.getBody().setEresult(EResult.OK.v());
-            
-            log.info("sentry={}", Util.dumpSHA1(digest));
+            credentials.writeSentry(msg.getFilename(), msg.getOffset(), msg.getBytes());
+            builder.setShaFile(ByteString.copyFrom(credentials.getSentrySha1()));
+            builder.setEresult(EResult.OK.v());
+            builder.setCubwrote(msg.getCubtowrite());
+            builder.setFilename(msg.getFilename());
+        } catch (IOException e) {
+            builder.setEresult(EResult.DiskFull.v());
+        }
+        ctx.reply(builder);
 
-            send(r);
-            
-        } catch (NoSuchAlgorithmException e) {
-            throw new IOException(e);
-        } 
     }
 
+    protected void handleClientAccountInfo(SteamConnection.SteamConnectionContext ctx, SM_ClientServer.CMsgClientAccountInfo msg) {
+        log.info("received account info");
+        //log.info(msg.toString());
+    }
 
-    private final Connection.CONNECTION_STATE_CHANGED connectionStateHandler = new Connection.CONNECTION_STATE_CHANGED() {
-        @Override
-        public void handle(ConnectionState newState) throws IOException {
-            log.info("new connection state: {}", newState);
-            switch (newState) {
-                case ESTABLISHED:
-                    Event.emit(SteamClient.this, CONNECTED.class);
-                    break;
-               
-                case CONNECTION_TIMEOUT:
-                case CLOSED:
-                case LOST:
-                case BROKEN:
-                    Event.deregisterEmitter(connection);
-                    connection = null;
-                    exitEventLoop = true;
-                    break;
-                    
-                default:
-                    break;
-            }
-        }
-    };
-    
-    private final Connection.MESSAGE_RECEIVED messageReceivedHandler = new Connection.MESSAGE_RECEIVED() {
-        @Override
-        public void handle(ReceivableMessage<?, ?> message) throws IOException {
-            if (!handlerRegistry.handle(message)) {
-                log.warn("unhandled message of type {}", MessageRegistry.getEMsgForClass(message.getClass()));
-                //message.dumpToLog(log, "");
-            }
-        }
-    };
-    
+    protected void handleClientNewLoginKey(SteamConnection.SteamConnectionContext ctx, SM_ClientServer.CMsgClientNewLoginKey msg) throws IOException {
+        log.info("received client new login key");
+        log.info(msg.toString());
+
+        SM_ClientServer.CMsgClientNewLoginKeyAccepted.Builder response = SM_ClientServer.CMsgClientNewLoginKeyAccepted.newBuilder();
+        response.setUniqueId(msg.getUniqueId());
+        ctx.reply(response);
+    }
 }

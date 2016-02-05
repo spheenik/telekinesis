@@ -3,7 +3,7 @@ package telekinesis.connection;
 public enum ConnectionState {
     DISCONNECTED,
     CONNECTING,
-    CONNECTION_TIMEOUT,
+    CONNECTION_FAILED,
     CONNECTED,
     ESTABLISHED,
     DISCONNECTING,

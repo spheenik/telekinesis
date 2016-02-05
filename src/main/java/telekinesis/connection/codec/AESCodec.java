@@ -1,32 +1,25 @@
 package telekinesis.connection.codec;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.security.GeneralSecurityException;
-import java.security.Key;
-import java.security.KeyFactory;
-import java.security.PublicKey;
-import java.security.Security;
-import java.security.spec.X509EncodedKeySpec;
-import java.util.HashMap;
-import java.util.Map;
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelDuplexHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPromise;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import telekinesis.model.steam.EUniverse;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.spec.IvParameterSpec;
+import java.io.IOException;
+import java.nio.ByteOrder;
+import java.security.*;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.HashMap;
+import java.util.Map;
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
+public class AESCodec extends ChannelDuplexHandler {
 
-import telekinesis.connection.Util;
-import telekinesis.message.MessageRegistry;
-import telekinesis.message.ReceivableMessage;
-import telekinesis.message.TransmittableMessage;
-import telekinesis.model.EMsg;
-import telekinesis.model.EUniverse;
-
-public class AESCodec extends MessageCodec {
-
-    static Map<EUniverse, byte[]> UNIVERSE_PUBLIC_KEYS = new HashMap<EUniverse, byte[]>();
+    static Map<EUniverse, byte[]> UNIVERSE_PUBLIC_KEYS = new HashMap<>();
 
     static {
         Security.addProvider(new BouncyCastleProvider());
@@ -45,81 +38,81 @@ public class AESCodec extends MessageCodec {
                 (byte) 0x4B, (byte) 0x8C, (byte) 0xD0, (byte) 0xCA, (byte) 0xF4, (byte) 0x08, (byte) 0x94, (byte) 0x46, (byte) 0xA5, (byte) 0x11, (byte) 0xAF, (byte) 0x3A, (byte) 0xCB, (byte) 0xB8, (byte) 0x4E, (byte) 0xDE, (byte) 0xC6, (byte) 0xD8, (byte) 0x85, (byte) 0x0A, (byte) 0x7D, (byte) 0xAA, (byte) 0x96, (byte) 0x0A, (byte) 0xEA, (byte) 0x7B, (byte) 0x51, (byte) 0xD6, (byte) 0x22, (byte) 0x62, (byte) 0x5C, (byte) 0x1E, (byte) 0x58, (byte) 0xD7, (byte) 0x46, (byte) 0x1E, (byte) 0x09, (byte) 0xAE, (byte) 0x43, (byte) 0xA7, (byte) 0xC4, (byte) 0x34, (byte) 0x69, (byte) 0xA2, (byte) 0xA5, (byte) 0xE8, (byte) 0x44, (byte) 0x76, (byte) 0x18, (byte) 0xE2, (byte) 0x3D, (byte) 0xB7, (byte) 0xC5, (byte) 0xA8, (byte) 0x96, (byte) 0xFD, (byte) 0xE5, (byte) 0xB4, (byte) 0x4B, (byte) 0xF8, (byte) 0x40, (byte) 0x12, (byte) 0xA6, (byte) 0x17, (byte) 0x4E, (byte) 0xC4, (byte) 0xC1, (byte) 0x60, (byte) 0x0E, (byte) 0xB0, (byte) 0xC2, (byte) 0xB8, (byte) 0x40, (byte) 0x4D, (byte) 0x9E,
                 (byte) 0x76, (byte) 0x4C, (byte) 0x44, (byte) 0xF4, (byte) 0xFC, (byte) 0x6F, (byte) 0x14, (byte) 0x89, (byte) 0x73, (byte) 0xB4, (byte) 0x13, (byte) 0x02, (byte) 0x01, (byte) 0x11 });
     }
-    
-    
-    public static int BLOCK_SIZE = 128;
-    public static int KEY_SIZE = 256;
-    
+
+
+    public static int BLOCK_SIZE_BITS = 128;
+    public static int KEY_SIZE_BITS = 256;
+    public static int BLOCK_SIZE = BLOCK_SIZE_BITS >> 3;
+
     private final Key aesKey;
     private final PublicKey rsaKey;
-    
+
+    private final Cipher cIv;
+    private final Cipher cMain;
+
     public AESCodec(EUniverse universe) throws IOException {
         try {
             KeyGenerator aesGenerator = KeyGenerator.getInstance("AES", "BC");
-            aesGenerator.init(KEY_SIZE);
+            aesGenerator.init(KEY_SIZE_BITS);
             aesKey = aesGenerator.generateKey();
             KeyFactory rsaFactory = KeyFactory.getInstance("RSA", "BC");
             rsaKey = rsaFactory.generatePublic(new X509EncodedKeySpec(UNIVERSE_PUBLIC_KEYS.get(universe)));
+
+            cIv = Cipher.getInstance("AES/ECB/NoPadding", "BC");
+            cMain = Cipher.getInstance("AES/CBC/PKCS7Padding", "BC");
+
         } catch (GeneralSecurityException e) {
             throw new IOException(e);
         }
     }
 
-    public void toWire(TransmittableMessage<?, ?> msg, ByteBuffer dstBuf) throws IOException {
-        try {
-            Cipher cIv = Cipher.getInstance("AES/ECB/NoPadding", "BC");
-            cIv.init(Cipher.ENCRYPT_MODE, aesKey);
-            Cipher cMain = Cipher.getInstance("AES/CBC/PKCS7Padding", "BC");
-            cMain.init(Cipher.ENCRYPT_MODE, aesKey);
-
-            ByteBuffer ivBuf = ByteBuffer.wrap(cMain.getParameters().getParameterSpec(IvParameterSpec.class).getIV());
-            
-            ByteBuffer msgBuf = Util.getNewBuffer();
-            msgBuf.putInt(MessageRegistry.getWireCodeForClass(msg.getClass()));
-            msg.encodeTo(msgBuf);
-            msgBuf.flip();
-            
-            cIv.doFinal(ivBuf, dstBuf);
-            cMain.doFinal(msgBuf, dstBuf);
-        } catch (GeneralSecurityException e) {
-            throw new IOException(e);
-        }
-    }
-
-    public ReceivableMessage<?, ?> fromWire(ByteBuffer srcBuf) throws IOException {
-        try {
-            Cipher cIv = Cipher.getInstance("AES/ECB/NoPadding", "BC");
-            cIv.init(Cipher.DECRYPT_MODE, aesKey);
-            byte[] cryptedIv = new byte[BLOCK_SIZE>>3];
-            srcBuf.get(cryptedIv);
-            IvParameterSpec iv = new IvParameterSpec(cIv.doFinal(cryptedIv));
-            
-            Cipher cMain = Cipher.getInstance("AES/CBC/PKCS7Padding", "BC");
-            cMain.init(Cipher.DECRYPT_MODE, aesKey, iv);
-            ByteBuffer msgBuf = Util.getNewBuffer();
-            cMain.doFinal(srcBuf, msgBuf);
-            
-            msgBuf.flip();
-            EMsg eMsg = EMsg.f(msgBuf.getInt());
-            log.debug("got encrypted message of type {}", eMsg);
-            ReceivableMessage<?, ?> msg = (ReceivableMessage<?, ?>) MessageRegistry.forEMsg(eMsg);
-            if (msg != null) {
-                msg.decodeFrom(msgBuf);
-            }                
-            return msg;
-        } catch (GeneralSecurityException e) {
-            throw new RuntimeException(e);
-        }
-    }
-    
     public byte[] getEncryptedKey() throws IOException {
         try {
             Cipher cipher = Cipher.getInstance("RSA/None/OAEPWithSHA1AndMGF1Padding", "BC");
             cipher.init(Cipher.ENCRYPT_MODE, rsaKey);
             return cipher.doFinal(aesKey.getEncoded());
         } catch (GeneralSecurityException e) {
-            throw new RuntimeException(e);
+            throw new IOException(e);
         }
     }
-    
+
+    @Override
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        ByteBuf in = (ByteBuf) msg;
+        try {
+            cIv.init(Cipher.DECRYPT_MODE, aesKey);
+
+            byte[] decryptedIv = cIv.doFinal(in.array(), in.arrayOffset(), BLOCK_SIZE);
+            cMain.init(Cipher.DECRYPT_MODE, aesKey, new IvParameterSpec(decryptedIv));
+
+            ByteBuf out = ctx.alloc().heapBuffer(in.readableBytes() - BLOCK_SIZE).order(ByteOrder.LITTLE_ENDIAN);
+            int n = cMain.doFinal(in.array(), in.arrayOffset() + BLOCK_SIZE, in.readableBytes() - BLOCK_SIZE, out.array(), out.arrayOffset());
+
+            out.writerIndex(n);
+
+            ctx.fireChannelRead(out);
+        } finally {
+            in.release();
+        }
+    }
+
+    @Override
+    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+        ByteBuf in = (ByteBuf) msg;
+        try {
+            cIv.init(Cipher.ENCRYPT_MODE, aesKey);
+            cMain.init(Cipher.ENCRYPT_MODE, aesKey);
+
+            ByteBuf out = ctx.alloc().heapBuffer(BLOCK_SIZE + cMain.getOutputSize(in.readableBytes())).order(ByteOrder.LITTLE_ENDIAN);
+            cIv.doFinal(cMain.getIV(), 0, BLOCK_SIZE, out.array(), out.arrayOffset());
+            int n = cMain.doFinal(in.array(), in.arrayOffset(), in.readableBytes(), out.array(), out.arrayOffset() + BLOCK_SIZE);
+
+            out.writerIndex(n + BLOCK_SIZE);
+
+            ctx.write(out, promise);
+        } finally {
+            in.release();
+        }
+    }
+
 }

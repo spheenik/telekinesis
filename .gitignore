@@ -1,5 +1,4 @@
+/.idea
+/*.iml
 /target
-/.settings
-/.classpath
-/.project
-/credentials.properties
+/run

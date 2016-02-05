@@ -1,4 +1,5 @@
 option java_package = "telekinesis.message.proto.generated";
+option java_outer_classname = "AppTicket";
 
 message EncryptedAppTicket {
 	optional uint32 ticket_version_no = 1;

@@ -1,12 +1,14 @@
 <configuration>
 	<appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
 		<encoder>
-			<pattern>%-30(%d{HH:mm:ss.SSS} [%thread]) %-5level %logger{32} - %msg%n</pattern>
+			<pattern>%-30(%d{HH:mm:ss.SSS} [%thread]) %-5level %-15logger{32} - %msg%n</pattern>
 		</encoder>
 	</appender>
 
-	<logger name="telekinesis.connection.codec" level="info" />
-	<logger name="telekinesis.connection" level="info" />
+	<logger name="client-1" level="debug" />
+    <logger name="client-1-conn" level="debug" />
+
+    <logger name="telekinesis.SteamClient" level="debug" />
 
 	<root level="info">
 		<appender-ref ref="stdout" />
