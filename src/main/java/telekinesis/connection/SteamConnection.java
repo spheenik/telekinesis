@@ -11,7 +11,7 @@ import telekinesis.Util;
 import telekinesis.connection.codec.AESCodec;
 import telekinesis.connection.codec.FrameCodec;
 import telekinesis.connection.codec.MessageCodec;
-import telekinesis.message.proto.generated.SM_Base;
+import telekinesis.message.proto.generated.steam.SM_Base;
 import telekinesis.message.simple.ChannelEncryptRequest;
 import telekinesis.message.simple.ChannelEncryptResponse;
 import telekinesis.message.simple.ChannelEncryptResult;

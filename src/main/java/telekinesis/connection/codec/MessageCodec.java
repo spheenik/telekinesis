@@ -9,7 +9,7 @@ import io.netty.channel.ChannelPromise;
 import org.slf4j.Logger;
 import telekinesis.connection.Message;
 import telekinesis.message.proto.ProtoHeader;
-import telekinesis.message.proto.generated.SM_Base;
+import telekinesis.message.proto.generated.steam.SM_Base;
 import telekinesis.model.Decodable;
 import telekinesis.model.Encodable;
 import telekinesis.model.Header;

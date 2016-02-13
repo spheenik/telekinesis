@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory;
 import telekinesis.connection.ConnectionState;
 import telekinesis.connection.IdleTimeoutFunction;
 import telekinesis.connection.SteamConnection;
-import telekinesis.message.proto.generated.SM_ClientServer;
+import telekinesis.message.proto.generated.steam.SM_ClientServer;
 import telekinesis.model.SteamClientDelegate;
 import telekinesis.model.steam.EMsg;
 import telekinesis.model.steam.EResult;

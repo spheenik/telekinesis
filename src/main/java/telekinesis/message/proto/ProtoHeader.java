@@ -1,7 +1,7 @@
 package telekinesis.message.proto;
 
 import io.netty.buffer.ByteBuf;
-import telekinesis.message.proto.generated.SM_Base;
+import telekinesis.message.proto.generated.steam.SM_Base;
 import telekinesis.model.Decodable;
 import telekinesis.model.Encodable;
 import telekinesis.model.Header;
