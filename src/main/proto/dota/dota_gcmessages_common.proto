@@ -1,5 +1,5 @@
 option java_package = "telekinesis.message.proto.generated.dota";
-option java_outer_classname = "DOTAGC_Common";
+option java_outer_classname = "DotaGC_Common";
 
 import "steammessages.proto";
 import "gcsdk_gcmessages.proto";

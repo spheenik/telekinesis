@@ -4764,7 +4764,7 @@ public final class DotaGC_Fantasy {
     /**
      * <code>optional .Fantasy_Selection_Mode selection_mode = 3 [default = FANTASY_SELECTION_INVALID];</code>
      */
-    telekinesis.message.proto.generated.dota.DOTAGC_Common.Fantasy_Selection_Mode getSelectionMode();
+    telekinesis.message.proto.generated.dota.DotaGC_Common.Fantasy_Selection_Mode getSelectionMode();
 
     /**
      * <code>optional uint32 team_count = 4;</code>
@@ -4840,7 +4840,7 @@ public final class DotaGC_Fantasy {
             }
             case 24: {
               int rawValue = input.readEnum();
-              telekinesis.message.proto.generated.dota.DOTAGC_Common.Fantasy_Selection_Mode value = telekinesis.message.proto.generated.dota.DOTAGC_Common.Fantasy_Selection_Mode.valueOf(rawValue);
+              telekinesis.message.proto.generated.dota.DotaGC_Common.Fantasy_Selection_Mode value = telekinesis.message.proto.generated.dota.DotaGC_Common.Fantasy_Selection_Mode.valueOf(rawValue);
               if (value == null) {
                 unknownFields.mergeVarintField(3, rawValue);
               } else {
@@ -4952,7 +4952,7 @@ public final class DotaGC_Fantasy {
     }
 
     public static final int SELECTION_MODE_FIELD_NUMBER = 3;
-    private telekinesis.message.proto.generated.dota.DOTAGC_Common.Fantasy_Selection_Mode selectionMode_;
+    private telekinesis.message.proto.generated.dota.DotaGC_Common.Fantasy_Selection_Mode selectionMode_;
     /**
      * <code>optional .Fantasy_Selection_Mode selection_mode = 3 [default = FANTASY_SELECTION_INVALID];</code>
      */
@@ -4962,7 +4962,7 @@ public final class DotaGC_Fantasy {
     /**
      * <code>optional .Fantasy_Selection_Mode selection_mode = 3 [default = FANTASY_SELECTION_INVALID];</code>
      */
-    public telekinesis.message.proto.generated.dota.DOTAGC_Common.Fantasy_Selection_Mode getSelectionMode() {
+    public telekinesis.message.proto.generated.dota.DotaGC_Common.Fantasy_Selection_Mode getSelectionMode() {
       return selectionMode_;
     }
 
@@ -4984,7 +4984,7 @@ public final class DotaGC_Fantasy {
     private void initFields() {
       leagueName_ = "";
       leagueLogo_ = 0L;
-      selectionMode_ = telekinesis.message.proto.generated.dota.DOTAGC_Common.Fantasy_Selection_Mode.FANTASY_SELECTION_INVALID;
+      selectionMode_ = telekinesis.message.proto.generated.dota.DotaGC_Common.Fantasy_Selection_Mode.FANTASY_SELECTION_INVALID;
       teamCount_ = 0;
     }
     private byte memoizedIsInitialized = -1;
@@ -5158,7 +5158,7 @@ public final class DotaGC_Fantasy {
         bitField0_ = (bitField0_ & ~0x00000001);
         leagueLogo_ = 0L;
         bitField0_ = (bitField0_ & ~0x00000002);
-        selectionMode_ = telekinesis.message.proto.generated.dota.DOTAGC_Common.Fantasy_Selection_Mode.FANTASY_SELECTION_INVALID;
+        selectionMode_ = telekinesis.message.proto.generated.dota.DotaGC_Common.Fantasy_Selection_Mode.FANTASY_SELECTION_INVALID;
         bitField0_ = (bitField0_ & ~0x00000004);
         teamCount_ = 0;
         bitField0_ = (bitField0_ & ~0x00000008);
@@ -5371,7 +5371,7 @@ public final class DotaGC_Fantasy {
         return this;
       }
 
-      private telekinesis.message.proto.generated.dota.DOTAGC_Common.Fantasy_Selection_Mode selectionMode_ = telekinesis.message.proto.generated.dota.DOTAGC_Common.Fantasy_Selection_Mode.FANTASY_SELECTION_INVALID;
+      private telekinesis.message.proto.generated.dota.DotaGC_Common.Fantasy_Selection_Mode selectionMode_ = telekinesis.message.proto.generated.dota.DotaGC_Common.Fantasy_Selection_Mode.FANTASY_SELECTION_INVALID;
       /**
        * <code>optional .Fantasy_Selection_Mode selection_mode = 3 [default = FANTASY_SELECTION_INVALID];</code>
        */
@@ -5381,13 +5381,13 @@ public final class DotaGC_Fantasy {
       /**
        * <code>optional .Fantasy_Selection_Mode selection_mode = 3 [default = FANTASY_SELECTION_INVALID];</code>
        */
-      public telekinesis.message.proto.generated.dota.DOTAGC_Common.Fantasy_Selection_Mode getSelectionMode() {
+      public telekinesis.message.proto.generated.dota.DotaGC_Common.Fantasy_Selection_Mode getSelectionMode() {
         return selectionMode_;
       }
       /**
        * <code>optional .Fantasy_Selection_Mode selection_mode = 3 [default = FANTASY_SELECTION_INVALID];</code>
        */
-      public Builder setSelectionMode(telekinesis.message.proto.generated.dota.DOTAGC_Common.Fantasy_Selection_Mode value) {
+      public Builder setSelectionMode(telekinesis.message.proto.generated.dota.DotaGC_Common.Fantasy_Selection_Mode value) {
         if (value == null) {
           throw new NullPointerException();
         }
@@ -5401,7 +5401,7 @@ public final class DotaGC_Fantasy {
        */
       public Builder clearSelectionMode() {
         bitField0_ = (bitField0_ & ~0x00000004);
-        selectionMode_ = telekinesis.message.proto.generated.dota.DOTAGC_Common.Fantasy_Selection_Mode.FANTASY_SELECTION_INVALID;
+        selectionMode_ = telekinesis.message.proto.generated.dota.DotaGC_Common.Fantasy_Selection_Mode.FANTASY_SELECTION_INVALID;
         onChanged();
         return this;
       }
@@ -7418,7 +7418,7 @@ public final class DotaGC_Fantasy {
     /**
      * <code>optional .Fantasy_Selection_Mode selection_mode = 4 [default = FANTASY_SELECTION_INVALID];</code>
      */
-    telekinesis.message.proto.generated.dota.DOTAGC_Common.Fantasy_Selection_Mode getSelectionMode();
+    telekinesis.message.proto.generated.dota.DotaGC_Common.Fantasy_Selection_Mode getSelectionMode();
 
     /**
      * <code>optional uint32 team_count = 5;</code>
@@ -7698,7 +7698,7 @@ public final class DotaGC_Fantasy {
             }
             case 32: {
               int rawValue = input.readEnum();
-              telekinesis.message.proto.generated.dota.DOTAGC_Common.Fantasy_Selection_Mode value = telekinesis.message.proto.generated.dota.DOTAGC_Common.Fantasy_Selection_Mode.valueOf(rawValue);
+              telekinesis.message.proto.generated.dota.DotaGC_Common.Fantasy_Selection_Mode value = telekinesis.message.proto.generated.dota.DotaGC_Common.Fantasy_Selection_Mode.valueOf(rawValue);
               if (value == null) {
                 unknownFields.mergeVarintField(4, rawValue);
               } else {
@@ -8584,7 +8584,7 @@ public final class DotaGC_Fantasy {
     }
 
     public static final int SELECTION_MODE_FIELD_NUMBER = 4;
-    private telekinesis.message.proto.generated.dota.DOTAGC_Common.Fantasy_Selection_Mode selectionMode_;
+    private telekinesis.message.proto.generated.dota.DotaGC_Common.Fantasy_Selection_Mode selectionMode_;
     /**
      * <code>optional .Fantasy_Selection_Mode selection_mode = 4 [default = FANTASY_SELECTION_INVALID];</code>
      */
@@ -8594,7 +8594,7 @@ public final class DotaGC_Fantasy {
     /**
      * <code>optional .Fantasy_Selection_Mode selection_mode = 4 [default = FANTASY_SELECTION_INVALID];</code>
      */
-    public telekinesis.message.proto.generated.dota.DOTAGC_Common.Fantasy_Selection_Mode getSelectionMode() {
+    public telekinesis.message.proto.generated.dota.DotaGC_Common.Fantasy_Selection_Mode getSelectionMode() {
       return selectionMode_;
     }
 
@@ -8962,7 +8962,7 @@ public final class DotaGC_Fantasy {
       fantasyLeagueId_ = 0;
       commissionerAccountId_ = 0;
       fantasyLeagueName_ = "";
-      selectionMode_ = telekinesis.message.proto.generated.dota.DOTAGC_Common.Fantasy_Selection_Mode.FANTASY_SELECTION_INVALID;
+      selectionMode_ = telekinesis.message.proto.generated.dota.DotaGC_Common.Fantasy_Selection_Mode.FANTASY_SELECTION_INVALID;
       teamCount_ = 0;
       logo_ = 0L;
       scoring_ = telekinesis.message.proto.generated.dota.DotaGC_Fantasy.CMsgFantasyLeagueScoring.getDefaultInstance();
@@ -9304,7 +9304,7 @@ public final class DotaGC_Fantasy {
         bitField0_ = (bitField0_ & ~0x00000002);
         fantasyLeagueName_ = "";
         bitField0_ = (bitField0_ & ~0x00000004);
-        selectionMode_ = telekinesis.message.proto.generated.dota.DOTAGC_Common.Fantasy_Selection_Mode.FANTASY_SELECTION_INVALID;
+        selectionMode_ = telekinesis.message.proto.generated.dota.DotaGC_Common.Fantasy_Selection_Mode.FANTASY_SELECTION_INVALID;
         bitField0_ = (bitField0_ & ~0x00000008);
         teamCount_ = 0;
         bitField0_ = (bitField0_ & ~0x00000010);
@@ -9777,7 +9777,7 @@ public final class DotaGC_Fantasy {
         return this;
       }
 
-      private telekinesis.message.proto.generated.dota.DOTAGC_Common.Fantasy_Selection_Mode selectionMode_ = telekinesis.message.proto.generated.dota.DOTAGC_Common.Fantasy_Selection_Mode.FANTASY_SELECTION_INVALID;
+      private telekinesis.message.proto.generated.dota.DotaGC_Common.Fantasy_Selection_Mode selectionMode_ = telekinesis.message.proto.generated.dota.DotaGC_Common.Fantasy_Selection_Mode.FANTASY_SELECTION_INVALID;
       /**
        * <code>optional .Fantasy_Selection_Mode selection_mode = 4 [default = FANTASY_SELECTION_INVALID];</code>
        */
@@ -9787,13 +9787,13 @@ public final class DotaGC_Fantasy {
       /**
        * <code>optional .Fantasy_Selection_Mode selection_mode = 4 [default = FANTASY_SELECTION_INVALID];</code>
        */
-      public telekinesis.message.proto.generated.dota.DOTAGC_Common.Fantasy_Selection_Mode getSelectionMode() {
+      public telekinesis.message.proto.generated.dota.DotaGC_Common.Fantasy_Selection_Mode getSelectionMode() {
         return selectionMode_;
       }
       /**
        * <code>optional .Fantasy_Selection_Mode selection_mode = 4 [default = FANTASY_SELECTION_INVALID];</code>
        */
-      public Builder setSelectionMode(telekinesis.message.proto.generated.dota.DOTAGC_Common.Fantasy_Selection_Mode value) {
+      public Builder setSelectionMode(telekinesis.message.proto.generated.dota.DotaGC_Common.Fantasy_Selection_Mode value) {
         if (value == null) {
           throw new NullPointerException();
         }
@@ -9807,7 +9807,7 @@ public final class DotaGC_Fantasy {
        */
       public Builder clearSelectionMode() {
         bitField0_ = (bitField0_ & ~0x00000008);
-        selectionMode_ = telekinesis.message.proto.generated.dota.DOTAGC_Common.Fantasy_Selection_Mode.FANTASY_SELECTION_INVALID;
+        selectionMode_ = telekinesis.message.proto.generated.dota.DotaGC_Common.Fantasy_Selection_Mode.FANTASY_SELECTION_INVALID;
         onChanged();
         return this;
       }
@@ -59005,7 +59005,7 @@ public final class DotaGC_Fantasy {
     /**
      * <code>optional .ETournamentType tournament_type = 5 [default = k_ETournamentType_Unknown];</code>
      */
-    telekinesis.message.proto.generated.dota.DOTAGC_Common.ETournamentType getTournamentType();
+    telekinesis.message.proto.generated.dota.DotaGC_Common.ETournamentType getTournamentType();
 
     /**
      * <code>optional .ETournamentTemplate tournament_template = 6 [default = k_ETournamentTemplate_None];</code>
@@ -59014,7 +59014,7 @@ public final class DotaGC_Fantasy {
     /**
      * <code>optional .ETournamentTemplate tournament_template = 6 [default = k_ETournamentTemplate_None];</code>
      */
-    telekinesis.message.proto.generated.dota.DOTAGC_Common.ETournamentTemplate getTournamentTemplate();
+    telekinesis.message.proto.generated.dota.DotaGC_Common.ETournamentTemplate getTournamentTemplate();
 
     /**
      * <code>optional uint32 league_id = 7;</code>
@@ -59147,7 +59147,7 @@ public final class DotaGC_Fantasy {
             }
             case 40: {
               int rawValue = input.readEnum();
-              telekinesis.message.proto.generated.dota.DOTAGC_Common.ETournamentType value = telekinesis.message.proto.generated.dota.DOTAGC_Common.ETournamentType.valueOf(rawValue);
+              telekinesis.message.proto.generated.dota.DotaGC_Common.ETournamentType value = telekinesis.message.proto.generated.dota.DotaGC_Common.ETournamentType.valueOf(rawValue);
               if (value == null) {
                 unknownFields.mergeVarintField(5, rawValue);
               } else {
@@ -59158,7 +59158,7 @@ public final class DotaGC_Fantasy {
             }
             case 48: {
               int rawValue = input.readEnum();
-              telekinesis.message.proto.generated.dota.DOTAGC_Common.ETournamentTemplate value = telekinesis.message.proto.generated.dota.DOTAGC_Common.ETournamentTemplate.valueOf(rawValue);
+              telekinesis.message.proto.generated.dota.DotaGC_Common.ETournamentTemplate value = telekinesis.message.proto.generated.dota.DotaGC_Common.ETournamentTemplate.valueOf(rawValue);
               if (value == null) {
                 unknownFields.mergeVarintField(6, rawValue);
               } else {
@@ -63221,7 +63221,7 @@ public final class DotaGC_Fantasy {
     }
 
     public static final int TOURNAMENT_TYPE_FIELD_NUMBER = 5;
-    private telekinesis.message.proto.generated.dota.DOTAGC_Common.ETournamentType tournamentType_;
+    private telekinesis.message.proto.generated.dota.DotaGC_Common.ETournamentType tournamentType_;
     /**
      * <code>optional .ETournamentType tournament_type = 5 [default = k_ETournamentType_Unknown];</code>
      */
@@ -63231,12 +63231,12 @@ public final class DotaGC_Fantasy {
     /**
      * <code>optional .ETournamentType tournament_type = 5 [default = k_ETournamentType_Unknown];</code>
      */
-    public telekinesis.message.proto.generated.dota.DOTAGC_Common.ETournamentType getTournamentType() {
+    public telekinesis.message.proto.generated.dota.DotaGC_Common.ETournamentType getTournamentType() {
       return tournamentType_;
     }
 
     public static final int TOURNAMENT_TEMPLATE_FIELD_NUMBER = 6;
-    private telekinesis.message.proto.generated.dota.DOTAGC_Common.ETournamentTemplate tournamentTemplate_;
+    private telekinesis.message.proto.generated.dota.DotaGC_Common.ETournamentTemplate tournamentTemplate_;
     /**
      * <code>optional .ETournamentTemplate tournament_template = 6 [default = k_ETournamentTemplate_None];</code>
      */
@@ -63246,7 +63246,7 @@ public final class DotaGC_Fantasy {
     /**
      * <code>optional .ETournamentTemplate tournament_template = 6 [default = k_ETournamentTemplate_None];</code>
      */
-    public telekinesis.message.proto.generated.dota.DOTAGC_Common.ETournamentTemplate getTournamentTemplate() {
+    public telekinesis.message.proto.generated.dota.DotaGC_Common.ETournamentTemplate getTournamentTemplate() {
       return tournamentTemplate_;
     }
 
@@ -63335,8 +63335,8 @@ public final class DotaGC_Fantasy {
       games_ = java.util.Collections.emptyList();
       gid_ = 0L;
       tournamentId_ = 0;
-      tournamentType_ = telekinesis.message.proto.generated.dota.DOTAGC_Common.ETournamentType.k_ETournamentType_Unknown;
-      tournamentTemplate_ = telekinesis.message.proto.generated.dota.DOTAGC_Common.ETournamentTemplate.k_ETournamentTemplate_None;
+      tournamentType_ = telekinesis.message.proto.generated.dota.DotaGC_Common.ETournamentType.k_ETournamentType_Unknown;
+      tournamentTemplate_ = telekinesis.message.proto.generated.dota.DotaGC_Common.ETournamentTemplate.k_ETournamentTemplate_None;
       leagueId_ = 0;
       startTime_ = 0;
       state_ = telekinesis.message.proto.generated.dota.DotaGC_Fantasy.ETournamentState.k_ETournamentState_Unknown;
@@ -63570,9 +63570,9 @@ public final class DotaGC_Fantasy {
         bitField0_ = (bitField0_ & ~0x00000004);
         tournamentId_ = 0;
         bitField0_ = (bitField0_ & ~0x00000008);
-        tournamentType_ = telekinesis.message.proto.generated.dota.DOTAGC_Common.ETournamentType.k_ETournamentType_Unknown;
+        tournamentType_ = telekinesis.message.proto.generated.dota.DotaGC_Common.ETournamentType.k_ETournamentType_Unknown;
         bitField0_ = (bitField0_ & ~0x00000010);
-        tournamentTemplate_ = telekinesis.message.proto.generated.dota.DOTAGC_Common.ETournamentTemplate.k_ETournamentTemplate_None;
+        tournamentTemplate_ = telekinesis.message.proto.generated.dota.DotaGC_Common.ETournamentTemplate.k_ETournamentTemplate_None;
         bitField0_ = (bitField0_ & ~0x00000020);
         leagueId_ = 0;
         bitField0_ = (bitField0_ & ~0x00000040);
@@ -64355,7 +64355,7 @@ public final class DotaGC_Fantasy {
         return this;
       }
 
-      private telekinesis.message.proto.generated.dota.DOTAGC_Common.ETournamentType tournamentType_ = telekinesis.message.proto.generated.dota.DOTAGC_Common.ETournamentType.k_ETournamentType_Unknown;
+      private telekinesis.message.proto.generated.dota.DotaGC_Common.ETournamentType tournamentType_ = telekinesis.message.proto.generated.dota.DotaGC_Common.ETournamentType.k_ETournamentType_Unknown;
       /**
        * <code>optional .ETournamentType tournament_type = 5 [default = k_ETournamentType_Unknown];</code>
        */
@@ -64365,13 +64365,13 @@ public final class DotaGC_Fantasy {
       /**
        * <code>optional .ETournamentType tournament_type = 5 [default = k_ETournamentType_Unknown];</code>
        */
-      public telekinesis.message.proto.generated.dota.DOTAGC_Common.ETournamentType getTournamentType() {
+      public telekinesis.message.proto.generated.dota.DotaGC_Common.ETournamentType getTournamentType() {
         return tournamentType_;
       }
       /**
        * <code>optional .ETournamentType tournament_type = 5 [default = k_ETournamentType_Unknown];</code>
        */
-      public Builder setTournamentType(telekinesis.message.proto.generated.dota.DOTAGC_Common.ETournamentType value) {
+      public Builder setTournamentType(telekinesis.message.proto.generated.dota.DotaGC_Common.ETournamentType value) {
         if (value == null) {
           throw new NullPointerException();
         }
@@ -64385,12 +64385,12 @@ public final class DotaGC_Fantasy {
        */
       public Builder clearTournamentType() {
         bitField0_ = (bitField0_ & ~0x00000010);
-        tournamentType_ = telekinesis.message.proto.generated.dota.DOTAGC_Common.ETournamentType.k_ETournamentType_Unknown;
+        tournamentType_ = telekinesis.message.proto.generated.dota.DotaGC_Common.ETournamentType.k_ETournamentType_Unknown;
         onChanged();
         return this;
       }
 
-      private telekinesis.message.proto.generated.dota.DOTAGC_Common.ETournamentTemplate tournamentTemplate_ = telekinesis.message.proto.generated.dota.DOTAGC_Common.ETournamentTemplate.k_ETournamentTemplate_None;
+      private telekinesis.message.proto.generated.dota.DotaGC_Common.ETournamentTemplate tournamentTemplate_ = telekinesis.message.proto.generated.dota.DotaGC_Common.ETournamentTemplate.k_ETournamentTemplate_None;
       /**
        * <code>optional .ETournamentTemplate tournament_template = 6 [default = k_ETournamentTemplate_None];</code>
        */
@@ -64400,13 +64400,13 @@ public final class DotaGC_Fantasy {
       /**
        * <code>optional .ETournamentTemplate tournament_template = 6 [default = k_ETournamentTemplate_None];</code>
        */
-      public telekinesis.message.proto.generated.dota.DOTAGC_Common.ETournamentTemplate getTournamentTemplate() {
+      public telekinesis.message.proto.generated.dota.DotaGC_Common.ETournamentTemplate getTournamentTemplate() {
         return tournamentTemplate_;
       }
       /**
        * <code>optional .ETournamentTemplate tournament_template = 6 [default = k_ETournamentTemplate_None];</code>
        */
-      public Builder setTournamentTemplate(telekinesis.message.proto.generated.dota.DOTAGC_Common.ETournamentTemplate value) {
+      public Builder setTournamentTemplate(telekinesis.message.proto.generated.dota.DotaGC_Common.ETournamentTemplate value) {
         if (value == null) {
           throw new NullPointerException();
         }
@@ -64420,7 +64420,7 @@ public final class DotaGC_Fantasy {
        */
       public Builder clearTournamentTemplate() {
         bitField0_ = (bitField0_ & ~0x00000020);
-        tournamentTemplate_ = telekinesis.message.proto.generated.dota.DOTAGC_Common.ETournamentTemplate.k_ETournamentTemplate_None;
+        tournamentTemplate_ = telekinesis.message.proto.generated.dota.DotaGC_Common.ETournamentTemplate.k_ETournamentTemplate_None;
         onChanged();
         return this;
       }
@@ -73172,7 +73172,7 @@ public final class DotaGC_Fantasy {
     com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
         new com.google.protobuf.Descriptors.FileDescriptor[] {
-          telekinesis.message.proto.generated.dota.DOTAGC_Common.getDescriptor(),
+          telekinesis.message.proto.generated.dota.DotaGC_Common.getDescriptor(),
         }, assigner);
     internal_static_CMsgGCPlayerInfo_descriptor =
       getDescriptor().getMessageTypes().get(0);
@@ -73720,7 +73720,7 @@ public final class DotaGC_Fantasy {
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_CMsgPassportDataResponse_descriptor,
         new java.lang.String[] { "AccountId", "Result", "International", "EastQualifiersPredictEndTime", "WestQualifiersPredictEndTime", "AllstarMatchEndTime", "LeagueGuesses", "EastQualifiersWinnerTeamId", "EastQualifiersRunnerUpTeamId", "WestQualifiersWinnerTeamId", "WestQualifiersRunnerUpTeamId", "PassportsBought", "OriginalPurchaserId", "FantasyTeamCount", "FantasyTeamexpiration", "FantasyTeamsWillLockAt", });
-    telekinesis.message.proto.generated.dota.DOTAGC_Common.getDescriptor();
+    telekinesis.message.proto.generated.dota.DotaGC_Common.getDescriptor();
   }
 
   // @@protoc_insertion_point(outer_class_scope)
