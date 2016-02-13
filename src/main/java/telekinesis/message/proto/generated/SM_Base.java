@@ -74,6 +74,15 @@ public final class SM_Base {
         getTargetJobNameBytes();
 
     /**
+     * <code>optional int32 seq_num = 24;</code>
+     */
+    boolean hasSeqNum();
+    /**
+     * <code>optional int32 seq_num = 24;</code>
+     */
+    int getSeqNum();
+
+    /**
      * <code>optional int32 eresult = 13 [default = 2];</code>
      */
     boolean hasEresult();
@@ -176,6 +185,15 @@ public final class SM_Base {
      * <code>optional uint64 trace_tag = 21;</code>
      */
     long getTraceTag();
+
+    /**
+     * <code>optional uint32 webapi_key_id = 25;</code>
+     */
+    boolean hasWebapiKeyId();
+    /**
+     * <code>optional uint32 webapi_key_id = 25;</code>
+     */
+    int getWebapiKeyId();
   }
   /**
    * Protobuf type {@code CMsgProtoBufHeader}
@@ -261,59 +279,69 @@ public final class SM_Base {
               break;
             }
             case 104: {
-              bitField0_ |= 0x00000040;
+              bitField0_ |= 0x00000080;
               eresult_ = input.readInt32();
               break;
             }
             case 114: {
               com.google.protobuf.ByteString bs = input.readBytes();
-              bitField0_ |= 0x00000080;
+              bitField0_ |= 0x00000100;
               errorMessage_ = bs;
               break;
             }
             case 120: {
-              bitField0_ |= 0x00000100;
+              bitField0_ |= 0x00000200;
               ip_ = input.readUInt32();
               break;
             }
             case 128: {
-              bitField0_ |= 0x00000200;
+              bitField0_ |= 0x00000400;
               authAccountFlags_ = input.readUInt32();
               break;
             }
             case 136: {
-              bitField0_ |= 0x00001000;
+              bitField0_ |= 0x00002000;
               transportError_ = input.readInt32();
               break;
             }
             case 144: {
-              bitField0_ |= 0x00002000;
+              bitField0_ |= 0x00004000;
               messageid_ = input.readUInt64();
               break;
             }
             case 152: {
-              bitField0_ |= 0x00004000;
+              bitField0_ |= 0x00008000;
               publisherGroupId_ = input.readUInt32();
               break;
             }
             case 160: {
-              bitField0_ |= 0x00008000;
+              bitField0_ |= 0x00010000;
               sysid_ = input.readUInt32();
               break;
             }
             case 168: {
-              bitField0_ |= 0x00010000;
+              bitField0_ |= 0x00020000;
               traceTag_ = input.readUInt64();
               break;
             }
             case 176: {
-              bitField0_ |= 0x00000400;
+              bitField0_ |= 0x00000800;
               tokenSource_ = input.readUInt32();
               break;
             }
             case 184: {
-              bitField0_ |= 0x00000800;
+              bitField0_ |= 0x00001000;
               adminSpoofingUser_ = input.readBool();
+              break;
+            }
+            case 192: {
+              bitField0_ |= 0x00000040;
+              seqNum_ = input.readInt32();
+              break;
+            }
+            case 200: {
+              bitField0_ |= 0x00040000;
+              webapiKeyId_ = input.readUInt32();
               break;
             }
           }
@@ -473,13 +501,28 @@ public final class SM_Base {
       }
     }
 
+    public static final int SEQ_NUM_FIELD_NUMBER = 24;
+    private int seqNum_;
+    /**
+     * <code>optional int32 seq_num = 24;</code>
+     */
+    public boolean hasSeqNum() {
+      return ((bitField0_ & 0x00000040) == 0x00000040);
+    }
+    /**
+     * <code>optional int32 seq_num = 24;</code>
+     */
+    public int getSeqNum() {
+      return seqNum_;
+    }
+
     public static final int ERESULT_FIELD_NUMBER = 13;
     private int eresult_;
     /**
      * <code>optional int32 eresult = 13 [default = 2];</code>
      */
     public boolean hasEresult() {
-      return ((bitField0_ & 0x00000040) == 0x00000040);
+      return ((bitField0_ & 0x00000080) == 0x00000080);
     }
     /**
      * <code>optional int32 eresult = 13 [default = 2];</code>
@@ -494,7 +537,7 @@ public final class SM_Base {
      * <code>optional string error_message = 14;</code>
      */
     public boolean hasErrorMessage() {
-      return ((bitField0_ & 0x00000080) == 0x00000080);
+      return ((bitField0_ & 0x00000100) == 0x00000100);
     }
     /**
      * <code>optional string error_message = 14;</code>
@@ -536,7 +579,7 @@ public final class SM_Base {
      * <code>optional uint32 ip = 15;</code>
      */
     public boolean hasIp() {
-      return ((bitField0_ & 0x00000100) == 0x00000100);
+      return ((bitField0_ & 0x00000200) == 0x00000200);
     }
     /**
      * <code>optional uint32 ip = 15;</code>
@@ -551,7 +594,7 @@ public final class SM_Base {
      * <code>optional uint32 auth_account_flags = 16;</code>
      */
     public boolean hasAuthAccountFlags() {
-      return ((bitField0_ & 0x00000200) == 0x00000200);
+      return ((bitField0_ & 0x00000400) == 0x00000400);
     }
     /**
      * <code>optional uint32 auth_account_flags = 16;</code>
@@ -566,7 +609,7 @@ public final class SM_Base {
      * <code>optional uint32 token_source = 22;</code>
      */
     public boolean hasTokenSource() {
-      return ((bitField0_ & 0x00000400) == 0x00000400);
+      return ((bitField0_ & 0x00000800) == 0x00000800);
     }
     /**
      * <code>optional uint32 token_source = 22;</code>
@@ -581,7 +624,7 @@ public final class SM_Base {
      * <code>optional bool admin_spoofing_user = 23;</code>
      */
     public boolean hasAdminSpoofingUser() {
-      return ((bitField0_ & 0x00000800) == 0x00000800);
+      return ((bitField0_ & 0x00001000) == 0x00001000);
     }
     /**
      * <code>optional bool admin_spoofing_user = 23;</code>
@@ -596,7 +639,7 @@ public final class SM_Base {
      * <code>optional int32 transport_error = 17 [default = 1];</code>
      */
     public boolean hasTransportError() {
-      return ((bitField0_ & 0x00001000) == 0x00001000);
+      return ((bitField0_ & 0x00002000) == 0x00002000);
     }
     /**
      * <code>optional int32 transport_error = 17 [default = 1];</code>
@@ -611,7 +654,7 @@ public final class SM_Base {
      * <code>optional uint64 messageid = 18 [default = 18446744073709551615];</code>
      */
     public boolean hasMessageid() {
-      return ((bitField0_ & 0x00002000) == 0x00002000);
+      return ((bitField0_ & 0x00004000) == 0x00004000);
     }
     /**
      * <code>optional uint64 messageid = 18 [default = 18446744073709551615];</code>
@@ -626,7 +669,7 @@ public final class SM_Base {
      * <code>optional uint32 publisher_group_id = 19;</code>
      */
     public boolean hasPublisherGroupId() {
-      return ((bitField0_ & 0x00004000) == 0x00004000);
+      return ((bitField0_ & 0x00008000) == 0x00008000);
     }
     /**
      * <code>optional uint32 publisher_group_id = 19;</code>
@@ -641,7 +684,7 @@ public final class SM_Base {
      * <code>optional uint32 sysid = 20;</code>
      */
     public boolean hasSysid() {
-      return ((bitField0_ & 0x00008000) == 0x00008000);
+      return ((bitField0_ & 0x00010000) == 0x00010000);
     }
     /**
      * <code>optional uint32 sysid = 20;</code>
@@ -656,13 +699,28 @@ public final class SM_Base {
      * <code>optional uint64 trace_tag = 21;</code>
      */
     public boolean hasTraceTag() {
-      return ((bitField0_ & 0x00010000) == 0x00010000);
+      return ((bitField0_ & 0x00020000) == 0x00020000);
     }
     /**
      * <code>optional uint64 trace_tag = 21;</code>
      */
     public long getTraceTag() {
       return traceTag_;
+    }
+
+    public static final int WEBAPI_KEY_ID_FIELD_NUMBER = 25;
+    private int webapiKeyId_;
+    /**
+     * <code>optional uint32 webapi_key_id = 25;</code>
+     */
+    public boolean hasWebapiKeyId() {
+      return ((bitField0_ & 0x00040000) == 0x00040000);
+    }
+    /**
+     * <code>optional uint32 webapi_key_id = 25;</code>
+     */
+    public int getWebapiKeyId() {
+      return webapiKeyId_;
     }
 
     private void initFields() {
@@ -672,6 +730,7 @@ public final class SM_Base {
       jobidSource_ = -1L;
       jobidTarget_ = -1L;
       targetJobName_ = "";
+      seqNum_ = 0;
       eresult_ = 2;
       errorMessage_ = "";
       ip_ = 0;
@@ -683,6 +742,7 @@ public final class SM_Base {
       publisherGroupId_ = 0;
       sysid_ = 0;
       traceTag_ = 0L;
+      webapiKeyId_ = 0;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -715,38 +775,44 @@ public final class SM_Base {
       if (((bitField0_ & 0x00000020) == 0x00000020)) {
         output.writeBytes(12, getTargetJobNameBytes());
       }
-      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+      if (((bitField0_ & 0x00000080) == 0x00000080)) {
         output.writeInt32(13, eresult_);
       }
-      if (((bitField0_ & 0x00000080) == 0x00000080)) {
+      if (((bitField0_ & 0x00000100) == 0x00000100)) {
         output.writeBytes(14, getErrorMessageBytes());
       }
-      if (((bitField0_ & 0x00000100) == 0x00000100)) {
+      if (((bitField0_ & 0x00000200) == 0x00000200)) {
         output.writeUInt32(15, ip_);
       }
-      if (((bitField0_ & 0x00000200) == 0x00000200)) {
+      if (((bitField0_ & 0x00000400) == 0x00000400)) {
         output.writeUInt32(16, authAccountFlags_);
       }
-      if (((bitField0_ & 0x00001000) == 0x00001000)) {
+      if (((bitField0_ & 0x00002000) == 0x00002000)) {
         output.writeInt32(17, transportError_);
       }
-      if (((bitField0_ & 0x00002000) == 0x00002000)) {
+      if (((bitField0_ & 0x00004000) == 0x00004000)) {
         output.writeUInt64(18, messageid_);
       }
-      if (((bitField0_ & 0x00004000) == 0x00004000)) {
+      if (((bitField0_ & 0x00008000) == 0x00008000)) {
         output.writeUInt32(19, publisherGroupId_);
       }
-      if (((bitField0_ & 0x00008000) == 0x00008000)) {
+      if (((bitField0_ & 0x00010000) == 0x00010000)) {
         output.writeUInt32(20, sysid_);
       }
-      if (((bitField0_ & 0x00010000) == 0x00010000)) {
+      if (((bitField0_ & 0x00020000) == 0x00020000)) {
         output.writeUInt64(21, traceTag_);
       }
-      if (((bitField0_ & 0x00000400) == 0x00000400)) {
+      if (((bitField0_ & 0x00000800) == 0x00000800)) {
         output.writeUInt32(22, tokenSource_);
       }
-      if (((bitField0_ & 0x00000800) == 0x00000800)) {
+      if (((bitField0_ & 0x00001000) == 0x00001000)) {
         output.writeBool(23, adminSpoofingUser_);
+      }
+      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+        output.writeInt32(24, seqNum_);
+      }
+      if (((bitField0_ & 0x00040000) == 0x00040000)) {
+        output.writeUInt32(25, webapiKeyId_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -781,49 +847,57 @@ public final class SM_Base {
         size += com.google.protobuf.CodedOutputStream
           .computeBytesSize(12, getTargetJobNameBytes());
       }
-      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+      if (((bitField0_ & 0x00000080) == 0x00000080)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(13, eresult_);
       }
-      if (((bitField0_ & 0x00000080) == 0x00000080)) {
+      if (((bitField0_ & 0x00000100) == 0x00000100)) {
         size += com.google.protobuf.CodedOutputStream
           .computeBytesSize(14, getErrorMessageBytes());
       }
-      if (((bitField0_ & 0x00000100) == 0x00000100)) {
+      if (((bitField0_ & 0x00000200) == 0x00000200)) {
         size += com.google.protobuf.CodedOutputStream
           .computeUInt32Size(15, ip_);
       }
-      if (((bitField0_ & 0x00000200) == 0x00000200)) {
+      if (((bitField0_ & 0x00000400) == 0x00000400)) {
         size += com.google.protobuf.CodedOutputStream
           .computeUInt32Size(16, authAccountFlags_);
       }
-      if (((bitField0_ & 0x00001000) == 0x00001000)) {
+      if (((bitField0_ & 0x00002000) == 0x00002000)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(17, transportError_);
       }
-      if (((bitField0_ & 0x00002000) == 0x00002000)) {
+      if (((bitField0_ & 0x00004000) == 0x00004000)) {
         size += com.google.protobuf.CodedOutputStream
           .computeUInt64Size(18, messageid_);
       }
-      if (((bitField0_ & 0x00004000) == 0x00004000)) {
+      if (((bitField0_ & 0x00008000) == 0x00008000)) {
         size += com.google.protobuf.CodedOutputStream
           .computeUInt32Size(19, publisherGroupId_);
       }
-      if (((bitField0_ & 0x00008000) == 0x00008000)) {
+      if (((bitField0_ & 0x00010000) == 0x00010000)) {
         size += com.google.protobuf.CodedOutputStream
           .computeUInt32Size(20, sysid_);
       }
-      if (((bitField0_ & 0x00010000) == 0x00010000)) {
+      if (((bitField0_ & 0x00020000) == 0x00020000)) {
         size += com.google.protobuf.CodedOutputStream
           .computeUInt64Size(21, traceTag_);
       }
-      if (((bitField0_ & 0x00000400) == 0x00000400)) {
+      if (((bitField0_ & 0x00000800) == 0x00000800)) {
         size += com.google.protobuf.CodedOutputStream
           .computeUInt32Size(22, tokenSource_);
       }
-      if (((bitField0_ & 0x00000800) == 0x00000800)) {
+      if (((bitField0_ & 0x00001000) == 0x00001000)) {
         size += com.google.protobuf.CodedOutputStream
           .computeBoolSize(23, adminSpoofingUser_);
+      }
+      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(24, seqNum_);
+      }
+      if (((bitField0_ & 0x00040000) == 0x00040000)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt32Size(25, webapiKeyId_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -954,28 +1028,32 @@ public final class SM_Base {
         bitField0_ = (bitField0_ & ~0x00000010);
         targetJobName_ = "";
         bitField0_ = (bitField0_ & ~0x00000020);
-        eresult_ = 2;
+        seqNum_ = 0;
         bitField0_ = (bitField0_ & ~0x00000040);
-        errorMessage_ = "";
+        eresult_ = 2;
         bitField0_ = (bitField0_ & ~0x00000080);
-        ip_ = 0;
+        errorMessage_ = "";
         bitField0_ = (bitField0_ & ~0x00000100);
-        authAccountFlags_ = 0;
+        ip_ = 0;
         bitField0_ = (bitField0_ & ~0x00000200);
-        tokenSource_ = 0;
+        authAccountFlags_ = 0;
         bitField0_ = (bitField0_ & ~0x00000400);
-        adminSpoofingUser_ = false;
+        tokenSource_ = 0;
         bitField0_ = (bitField0_ & ~0x00000800);
-        transportError_ = 1;
+        adminSpoofingUser_ = false;
         bitField0_ = (bitField0_ & ~0x00001000);
-        messageid_ = -1L;
+        transportError_ = 1;
         bitField0_ = (bitField0_ & ~0x00002000);
-        publisherGroupId_ = 0;
+        messageid_ = -1L;
         bitField0_ = (bitField0_ & ~0x00004000);
-        sysid_ = 0;
+        publisherGroupId_ = 0;
         bitField0_ = (bitField0_ & ~0x00008000);
-        traceTag_ = 0L;
+        sysid_ = 0;
         bitField0_ = (bitField0_ & ~0x00010000);
+        traceTag_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00020000);
+        webapiKeyId_ = 0;
+        bitField0_ = (bitField0_ & ~0x00040000);
         return this;
       }
 
@@ -1031,47 +1109,55 @@ public final class SM_Base {
         if (((from_bitField0_ & 0x00000040) == 0x00000040)) {
           to_bitField0_ |= 0x00000040;
         }
-        result.eresult_ = eresult_;
+        result.seqNum_ = seqNum_;
         if (((from_bitField0_ & 0x00000080) == 0x00000080)) {
           to_bitField0_ |= 0x00000080;
         }
-        result.errorMessage_ = errorMessage_;
+        result.eresult_ = eresult_;
         if (((from_bitField0_ & 0x00000100) == 0x00000100)) {
           to_bitField0_ |= 0x00000100;
         }
-        result.ip_ = ip_;
+        result.errorMessage_ = errorMessage_;
         if (((from_bitField0_ & 0x00000200) == 0x00000200)) {
           to_bitField0_ |= 0x00000200;
         }
-        result.authAccountFlags_ = authAccountFlags_;
+        result.ip_ = ip_;
         if (((from_bitField0_ & 0x00000400) == 0x00000400)) {
           to_bitField0_ |= 0x00000400;
         }
-        result.tokenSource_ = tokenSource_;
+        result.authAccountFlags_ = authAccountFlags_;
         if (((from_bitField0_ & 0x00000800) == 0x00000800)) {
           to_bitField0_ |= 0x00000800;
         }
-        result.adminSpoofingUser_ = adminSpoofingUser_;
+        result.tokenSource_ = tokenSource_;
         if (((from_bitField0_ & 0x00001000) == 0x00001000)) {
           to_bitField0_ |= 0x00001000;
         }
-        result.transportError_ = transportError_;
+        result.adminSpoofingUser_ = adminSpoofingUser_;
         if (((from_bitField0_ & 0x00002000) == 0x00002000)) {
           to_bitField0_ |= 0x00002000;
         }
-        result.messageid_ = messageid_;
+        result.transportError_ = transportError_;
         if (((from_bitField0_ & 0x00004000) == 0x00004000)) {
           to_bitField0_ |= 0x00004000;
         }
-        result.publisherGroupId_ = publisherGroupId_;
+        result.messageid_ = messageid_;
         if (((from_bitField0_ & 0x00008000) == 0x00008000)) {
           to_bitField0_ |= 0x00008000;
         }
-        result.sysid_ = sysid_;
+        result.publisherGroupId_ = publisherGroupId_;
         if (((from_bitField0_ & 0x00010000) == 0x00010000)) {
           to_bitField0_ |= 0x00010000;
         }
+        result.sysid_ = sysid_;
+        if (((from_bitField0_ & 0x00020000) == 0x00020000)) {
+          to_bitField0_ |= 0x00020000;
+        }
         result.traceTag_ = traceTag_;
+        if (((from_bitField0_ & 0x00040000) == 0x00040000)) {
+          to_bitField0_ |= 0x00040000;
+        }
+        result.webapiKeyId_ = webapiKeyId_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -1108,11 +1194,14 @@ public final class SM_Base {
           targetJobName_ = other.targetJobName_;
           onChanged();
         }
+        if (other.hasSeqNum()) {
+          setSeqNum(other.getSeqNum());
+        }
         if (other.hasEresult()) {
           setEresult(other.getEresult());
         }
         if (other.hasErrorMessage()) {
-          bitField0_ |= 0x00000080;
+          bitField0_ |= 0x00000100;
           errorMessage_ = other.errorMessage_;
           onChanged();
         }
@@ -1142,6 +1231,9 @@ public final class SM_Base {
         }
         if (other.hasTraceTag()) {
           setTraceTag(other.getTraceTag());
+        }
+        if (other.hasWebapiKeyId()) {
+          setWebapiKeyId(other.getWebapiKeyId());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
@@ -1406,12 +1498,44 @@ public final class SM_Base {
         return this;
       }
 
+      private int seqNum_ ;
+      /**
+       * <code>optional int32 seq_num = 24;</code>
+       */
+      public boolean hasSeqNum() {
+        return ((bitField0_ & 0x00000040) == 0x00000040);
+      }
+      /**
+       * <code>optional int32 seq_num = 24;</code>
+       */
+      public int getSeqNum() {
+        return seqNum_;
+      }
+      /**
+       * <code>optional int32 seq_num = 24;</code>
+       */
+      public Builder setSeqNum(int value) {
+        bitField0_ |= 0x00000040;
+        seqNum_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional int32 seq_num = 24;</code>
+       */
+      public Builder clearSeqNum() {
+        bitField0_ = (bitField0_ & ~0x00000040);
+        seqNum_ = 0;
+        onChanged();
+        return this;
+      }
+
       private int eresult_ = 2;
       /**
        * <code>optional int32 eresult = 13 [default = 2];</code>
        */
       public boolean hasEresult() {
-        return ((bitField0_ & 0x00000040) == 0x00000040);
+        return ((bitField0_ & 0x00000080) == 0x00000080);
       }
       /**
        * <code>optional int32 eresult = 13 [default = 2];</code>
@@ -1423,7 +1547,7 @@ public final class SM_Base {
        * <code>optional int32 eresult = 13 [default = 2];</code>
        */
       public Builder setEresult(int value) {
-        bitField0_ |= 0x00000040;
+        bitField0_ |= 0x00000080;
         eresult_ = value;
         onChanged();
         return this;
@@ -1432,7 +1556,7 @@ public final class SM_Base {
        * <code>optional int32 eresult = 13 [default = 2];</code>
        */
       public Builder clearEresult() {
-        bitField0_ = (bitField0_ & ~0x00000040);
+        bitField0_ = (bitField0_ & ~0x00000080);
         eresult_ = 2;
         onChanged();
         return this;
@@ -1443,7 +1567,7 @@ public final class SM_Base {
        * <code>optional string error_message = 14;</code>
        */
       public boolean hasErrorMessage() {
-        return ((bitField0_ & 0x00000080) == 0x00000080);
+        return ((bitField0_ & 0x00000100) == 0x00000100);
       }
       /**
        * <code>optional string error_message = 14;</code>
@@ -1486,7 +1610,7 @@ public final class SM_Base {
         if (value == null) {
     throw new NullPointerException();
   }
-  bitField0_ |= 0x00000080;
+  bitField0_ |= 0x00000100;
         errorMessage_ = value;
         onChanged();
         return this;
@@ -1495,7 +1619,7 @@ public final class SM_Base {
        * <code>optional string error_message = 14;</code>
        */
       public Builder clearErrorMessage() {
-        bitField0_ = (bitField0_ & ~0x00000080);
+        bitField0_ = (bitField0_ & ~0x00000100);
         errorMessage_ = getDefaultInstance().getErrorMessage();
         onChanged();
         return this;
@@ -1508,7 +1632,7 @@ public final class SM_Base {
         if (value == null) {
     throw new NullPointerException();
   }
-  bitField0_ |= 0x00000080;
+  bitField0_ |= 0x00000100;
         errorMessage_ = value;
         onChanged();
         return this;
@@ -1519,7 +1643,7 @@ public final class SM_Base {
        * <code>optional uint32 ip = 15;</code>
        */
       public boolean hasIp() {
-        return ((bitField0_ & 0x00000100) == 0x00000100);
+        return ((bitField0_ & 0x00000200) == 0x00000200);
       }
       /**
        * <code>optional uint32 ip = 15;</code>
@@ -1531,7 +1655,7 @@ public final class SM_Base {
        * <code>optional uint32 ip = 15;</code>
        */
       public Builder setIp(int value) {
-        bitField0_ |= 0x00000100;
+        bitField0_ |= 0x00000200;
         ip_ = value;
         onChanged();
         return this;
@@ -1540,7 +1664,7 @@ public final class SM_Base {
        * <code>optional uint32 ip = 15;</code>
        */
       public Builder clearIp() {
-        bitField0_ = (bitField0_ & ~0x00000100);
+        bitField0_ = (bitField0_ & ~0x00000200);
         ip_ = 0;
         onChanged();
         return this;
@@ -1551,7 +1675,7 @@ public final class SM_Base {
        * <code>optional uint32 auth_account_flags = 16;</code>
        */
       public boolean hasAuthAccountFlags() {
-        return ((bitField0_ & 0x00000200) == 0x00000200);
+        return ((bitField0_ & 0x00000400) == 0x00000400);
       }
       /**
        * <code>optional uint32 auth_account_flags = 16;</code>
@@ -1563,7 +1687,7 @@ public final class SM_Base {
        * <code>optional uint32 auth_account_flags = 16;</code>
        */
       public Builder setAuthAccountFlags(int value) {
-        bitField0_ |= 0x00000200;
+        bitField0_ |= 0x00000400;
         authAccountFlags_ = value;
         onChanged();
         return this;
@@ -1572,7 +1696,7 @@ public final class SM_Base {
        * <code>optional uint32 auth_account_flags = 16;</code>
        */
       public Builder clearAuthAccountFlags() {
-        bitField0_ = (bitField0_ & ~0x00000200);
+        bitField0_ = (bitField0_ & ~0x00000400);
         authAccountFlags_ = 0;
         onChanged();
         return this;
@@ -1583,7 +1707,7 @@ public final class SM_Base {
        * <code>optional uint32 token_source = 22;</code>
        */
       public boolean hasTokenSource() {
-        return ((bitField0_ & 0x00000400) == 0x00000400);
+        return ((bitField0_ & 0x00000800) == 0x00000800);
       }
       /**
        * <code>optional uint32 token_source = 22;</code>
@@ -1595,7 +1719,7 @@ public final class SM_Base {
        * <code>optional uint32 token_source = 22;</code>
        */
       public Builder setTokenSource(int value) {
-        bitField0_ |= 0x00000400;
+        bitField0_ |= 0x00000800;
         tokenSource_ = value;
         onChanged();
         return this;
@@ -1604,7 +1728,7 @@ public final class SM_Base {
        * <code>optional uint32 token_source = 22;</code>
        */
       public Builder clearTokenSource() {
-        bitField0_ = (bitField0_ & ~0x00000400);
+        bitField0_ = (bitField0_ & ~0x00000800);
         tokenSource_ = 0;
         onChanged();
         return this;
@@ -1615,7 +1739,7 @@ public final class SM_Base {
        * <code>optional bool admin_spoofing_user = 23;</code>
        */
       public boolean hasAdminSpoofingUser() {
-        return ((bitField0_ & 0x00000800) == 0x00000800);
+        return ((bitField0_ & 0x00001000) == 0x00001000);
       }
       /**
        * <code>optional bool admin_spoofing_user = 23;</code>
@@ -1627,7 +1751,7 @@ public final class SM_Base {
        * <code>optional bool admin_spoofing_user = 23;</code>
        */
       public Builder setAdminSpoofingUser(boolean value) {
-        bitField0_ |= 0x00000800;
+        bitField0_ |= 0x00001000;
         adminSpoofingUser_ = value;
         onChanged();
         return this;
@@ -1636,7 +1760,7 @@ public final class SM_Base {
        * <code>optional bool admin_spoofing_user = 23;</code>
        */
       public Builder clearAdminSpoofingUser() {
-        bitField0_ = (bitField0_ & ~0x00000800);
+        bitField0_ = (bitField0_ & ~0x00001000);
         adminSpoofingUser_ = false;
         onChanged();
         return this;
@@ -1647,7 +1771,7 @@ public final class SM_Base {
        * <code>optional int32 transport_error = 17 [default = 1];</code>
        */
       public boolean hasTransportError() {
-        return ((bitField0_ & 0x00001000) == 0x00001000);
+        return ((bitField0_ & 0x00002000) == 0x00002000);
       }
       /**
        * <code>optional int32 transport_error = 17 [default = 1];</code>
@@ -1659,7 +1783,7 @@ public final class SM_Base {
        * <code>optional int32 transport_error = 17 [default = 1];</code>
        */
       public Builder setTransportError(int value) {
-        bitField0_ |= 0x00001000;
+        bitField0_ |= 0x00002000;
         transportError_ = value;
         onChanged();
         return this;
@@ -1668,7 +1792,7 @@ public final class SM_Base {
        * <code>optional int32 transport_error = 17 [default = 1];</code>
        */
       public Builder clearTransportError() {
-        bitField0_ = (bitField0_ & ~0x00001000);
+        bitField0_ = (bitField0_ & ~0x00002000);
         transportError_ = 1;
         onChanged();
         return this;
@@ -1679,7 +1803,7 @@ public final class SM_Base {
        * <code>optional uint64 messageid = 18 [default = 18446744073709551615];</code>
        */
       public boolean hasMessageid() {
-        return ((bitField0_ & 0x00002000) == 0x00002000);
+        return ((bitField0_ & 0x00004000) == 0x00004000);
       }
       /**
        * <code>optional uint64 messageid = 18 [default = 18446744073709551615];</code>
@@ -1691,7 +1815,7 @@ public final class SM_Base {
        * <code>optional uint64 messageid = 18 [default = 18446744073709551615];</code>
        */
       public Builder setMessageid(long value) {
-        bitField0_ |= 0x00002000;
+        bitField0_ |= 0x00004000;
         messageid_ = value;
         onChanged();
         return this;
@@ -1700,7 +1824,7 @@ public final class SM_Base {
        * <code>optional uint64 messageid = 18 [default = 18446744073709551615];</code>
        */
       public Builder clearMessageid() {
-        bitField0_ = (bitField0_ & ~0x00002000);
+        bitField0_ = (bitField0_ & ~0x00004000);
         messageid_ = -1L;
         onChanged();
         return this;
@@ -1711,7 +1835,7 @@ public final class SM_Base {
        * <code>optional uint32 publisher_group_id = 19;</code>
        */
       public boolean hasPublisherGroupId() {
-        return ((bitField0_ & 0x00004000) == 0x00004000);
+        return ((bitField0_ & 0x00008000) == 0x00008000);
       }
       /**
        * <code>optional uint32 publisher_group_id = 19;</code>
@@ -1723,7 +1847,7 @@ public final class SM_Base {
        * <code>optional uint32 publisher_group_id = 19;</code>
        */
       public Builder setPublisherGroupId(int value) {
-        bitField0_ |= 0x00004000;
+        bitField0_ |= 0x00008000;
         publisherGroupId_ = value;
         onChanged();
         return this;
@@ -1732,7 +1856,7 @@ public final class SM_Base {
        * <code>optional uint32 publisher_group_id = 19;</code>
        */
       public Builder clearPublisherGroupId() {
-        bitField0_ = (bitField0_ & ~0x00004000);
+        bitField0_ = (bitField0_ & ~0x00008000);
         publisherGroupId_ = 0;
         onChanged();
         return this;
@@ -1743,7 +1867,7 @@ public final class SM_Base {
        * <code>optional uint32 sysid = 20;</code>
        */
       public boolean hasSysid() {
-        return ((bitField0_ & 0x00008000) == 0x00008000);
+        return ((bitField0_ & 0x00010000) == 0x00010000);
       }
       /**
        * <code>optional uint32 sysid = 20;</code>
@@ -1755,7 +1879,7 @@ public final class SM_Base {
        * <code>optional uint32 sysid = 20;</code>
        */
       public Builder setSysid(int value) {
-        bitField0_ |= 0x00008000;
+        bitField0_ |= 0x00010000;
         sysid_ = value;
         onChanged();
         return this;
@@ -1764,7 +1888,7 @@ public final class SM_Base {
        * <code>optional uint32 sysid = 20;</code>
        */
       public Builder clearSysid() {
-        bitField0_ = (bitField0_ & ~0x00008000);
+        bitField0_ = (bitField0_ & ~0x00010000);
         sysid_ = 0;
         onChanged();
         return this;
@@ -1775,7 +1899,7 @@ public final class SM_Base {
        * <code>optional uint64 trace_tag = 21;</code>
        */
       public boolean hasTraceTag() {
-        return ((bitField0_ & 0x00010000) == 0x00010000);
+        return ((bitField0_ & 0x00020000) == 0x00020000);
       }
       /**
        * <code>optional uint64 trace_tag = 21;</code>
@@ -1787,7 +1911,7 @@ public final class SM_Base {
        * <code>optional uint64 trace_tag = 21;</code>
        */
       public Builder setTraceTag(long value) {
-        bitField0_ |= 0x00010000;
+        bitField0_ |= 0x00020000;
         traceTag_ = value;
         onChanged();
         return this;
@@ -1796,8 +1920,40 @@ public final class SM_Base {
        * <code>optional uint64 trace_tag = 21;</code>
        */
       public Builder clearTraceTag() {
-        bitField0_ = (bitField0_ & ~0x00010000);
+        bitField0_ = (bitField0_ & ~0x00020000);
         traceTag_ = 0L;
+        onChanged();
+        return this;
+      }
+
+      private int webapiKeyId_ ;
+      /**
+       * <code>optional uint32 webapi_key_id = 25;</code>
+       */
+      public boolean hasWebapiKeyId() {
+        return ((bitField0_ & 0x00040000) == 0x00040000);
+      }
+      /**
+       * <code>optional uint32 webapi_key_id = 25;</code>
+       */
+      public int getWebapiKeyId() {
+        return webapiKeyId_;
+      }
+      /**
+       * <code>optional uint32 webapi_key_id = 25;</code>
+       */
+      public Builder setWebapiKeyId(int value) {
+        bitField0_ |= 0x00040000;
+        webapiKeyId_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional uint32 webapi_key_id = 25;</code>
+       */
+      public Builder clearWebapiKeyId() {
+        bitField0_ = (bitField0_ & ~0x00040000);
+        webapiKeyId_ = 0;
         onChanged();
         return this;
       }
@@ -3691,6 +3847,15 @@ public final class SM_Base {
      */
     com.google.protobuf.ByteString
         getPropagationBytes();
+
+    /**
+     * <code>optional bool has_adult_content = 12;</code>
+     */
+    boolean hasHasAdultContent();
+    /**
+     * <code>optional bool has_adult_content = 12;</code>
+     */
+    boolean getHasAdultContent();
   }
   /**
    * Protobuf type {@code CCDDBAppDetailCommon}
@@ -3803,6 +3968,11 @@ public final class SM_Base {
               com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000400;
               propagation_ = bs;
+              break;
+            }
+            case 96: {
+              bitField0_ |= 0x00000800;
+              hasAdultContent_ = input.readBool();
               break;
             }
           }
@@ -4172,6 +4342,21 @@ public final class SM_Base {
       }
     }
 
+    public static final int HAS_ADULT_CONTENT_FIELD_NUMBER = 12;
+    private boolean hasAdultContent_;
+    /**
+     * <code>optional bool has_adult_content = 12;</code>
+     */
+    public boolean hasHasAdultContent() {
+      return ((bitField0_ & 0x00000800) == 0x00000800);
+    }
+    /**
+     * <code>optional bool has_adult_content = 12;</code>
+     */
+    public boolean getHasAdultContent() {
+      return hasAdultContent_;
+    }
+
     private void initFields() {
       appid_ = 0;
       name_ = "";
@@ -4184,6 +4369,7 @@ public final class SM_Base {
       communityVisibleStats_ = false;
       friendlyName_ = "";
       propagation_ = "";
+      hasAdultContent_ = false;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -4230,6 +4416,9 @@ public final class SM_Base {
       }
       if (((bitField0_ & 0x00000400) == 0x00000400)) {
         output.writeBytes(11, getPropagationBytes());
+      }
+      if (((bitField0_ & 0x00000800) == 0x00000800)) {
+        output.writeBool(12, hasAdultContent_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -4283,6 +4472,10 @@ public final class SM_Base {
       if (((bitField0_ & 0x00000400) == 0x00000400)) {
         size += com.google.protobuf.CodedOutputStream
           .computeBytesSize(11, getPropagationBytes());
+      }
+      if (((bitField0_ & 0x00000800) == 0x00000800)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBoolSize(12, hasAdultContent_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -4423,6 +4616,8 @@ public final class SM_Base {
         bitField0_ = (bitField0_ & ~0x00000200);
         propagation_ = "";
         bitField0_ = (bitField0_ & ~0x00000400);
+        hasAdultContent_ = false;
+        bitField0_ = (bitField0_ & ~0x00000800);
         return this;
       }
 
@@ -4495,6 +4690,10 @@ public final class SM_Base {
           to_bitField0_ |= 0x00000400;
         }
         result.propagation_ = propagation_;
+        if (((from_bitField0_ & 0x00000800) == 0x00000800)) {
+          to_bitField0_ |= 0x00000800;
+        }
+        result.hasAdultContent_ = hasAdultContent_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -4555,6 +4754,9 @@ public final class SM_Base {
           bitField0_ |= 0x00000400;
           propagation_ = other.propagation_;
           onChanged();
+        }
+        if (other.hasHasAdultContent()) {
+          setHasAdultContent(other.getHasAdultContent());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
@@ -5199,6 +5401,38 @@ public final class SM_Base {
         return this;
       }
 
+      private boolean hasAdultContent_ ;
+      /**
+       * <code>optional bool has_adult_content = 12;</code>
+       */
+      public boolean hasHasAdultContent() {
+        return ((bitField0_ & 0x00000800) == 0x00000800);
+      }
+      /**
+       * <code>optional bool has_adult_content = 12;</code>
+       */
+      public boolean getHasAdultContent() {
+        return hasAdultContent_;
+      }
+      /**
+       * <code>optional bool has_adult_content = 12;</code>
+       */
+      public Builder setHasAdultContent(boolean value) {
+        bitField0_ |= 0x00000800;
+        hasAdultContent_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional bool has_adult_content = 12;</code>
+       */
+      public Builder clearHasAdultContent() {
+        bitField0_ = (bitField0_ & ~0x00000800);
+        hasAdultContent_ = false;
+        onChanged();
+        return this;
+      }
+
       // @@protoc_insertion_point(builder_scope:CCDDBAppDetailCommon)
     }
 
@@ -5330,6 +5564,24 @@ public final class SM_Base {
      * <code>optional bool economy_support_supervisor = 13;</code>
      */
     boolean getEconomySupportSupervisor();
+
+    /**
+     * <code>optional bool manage_pricing = 14;</code>
+     */
+    boolean hasManagePricing();
+    /**
+     * <code>optional bool manage_pricing = 14;</code>
+     */
+    boolean getManagePricing();
+
+    /**
+     * <code>optional bool broadcast_live = 15;</code>
+     */
+    boolean hasBroadcastLive();
+    /**
+     * <code>optional bool broadcast_live = 15;</code>
+     */
+    boolean getBroadcastLive();
   }
   /**
    * Protobuf type {@code CMsgAppRights}
@@ -5446,6 +5698,16 @@ public final class SM_Base {
             case 104: {
               bitField0_ |= 0x00001000;
               economySupportSupervisor_ = input.readBool();
+              break;
+            }
+            case 112: {
+              bitField0_ |= 0x00002000;
+              managePricing_ = input.readBool();
+              break;
+            }
+            case 120: {
+              bitField0_ |= 0x00004000;
+              broadcastLive_ = input.readBool();
               break;
             }
           }
@@ -5683,6 +5945,36 @@ public final class SM_Base {
       return economySupportSupervisor_;
     }
 
+    public static final int MANAGE_PRICING_FIELD_NUMBER = 14;
+    private boolean managePricing_;
+    /**
+     * <code>optional bool manage_pricing = 14;</code>
+     */
+    public boolean hasManagePricing() {
+      return ((bitField0_ & 0x00002000) == 0x00002000);
+    }
+    /**
+     * <code>optional bool manage_pricing = 14;</code>
+     */
+    public boolean getManagePricing() {
+      return managePricing_;
+    }
+
+    public static final int BROADCAST_LIVE_FIELD_NUMBER = 15;
+    private boolean broadcastLive_;
+    /**
+     * <code>optional bool broadcast_live = 15;</code>
+     */
+    public boolean hasBroadcastLive() {
+      return ((bitField0_ & 0x00004000) == 0x00004000);
+    }
+    /**
+     * <code>optional bool broadcast_live = 15;</code>
+     */
+    public boolean getBroadcastLive() {
+      return broadcastLive_;
+    }
+
     private void initFields() {
       editInfo_ = false;
       publish_ = false;
@@ -5697,6 +5989,8 @@ public final class SM_Base {
       editMarketing_ = false;
       economySupport_ = false;
       economySupportSupervisor_ = false;
+      managePricing_ = false;
+      broadcastLive_ = false;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -5749,6 +6043,12 @@ public final class SM_Base {
       }
       if (((bitField0_ & 0x00001000) == 0x00001000)) {
         output.writeBool(13, economySupportSupervisor_);
+      }
+      if (((bitField0_ & 0x00002000) == 0x00002000)) {
+        output.writeBool(14, managePricing_);
+      }
+      if (((bitField0_ & 0x00004000) == 0x00004000)) {
+        output.writeBool(15, broadcastLive_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -5810,6 +6110,14 @@ public final class SM_Base {
       if (((bitField0_ & 0x00001000) == 0x00001000)) {
         size += com.google.protobuf.CodedOutputStream
           .computeBoolSize(13, economySupportSupervisor_);
+      }
+      if (((bitField0_ & 0x00002000) == 0x00002000)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBoolSize(14, managePricing_);
+      }
+      if (((bitField0_ & 0x00004000) == 0x00004000)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBoolSize(15, broadcastLive_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -5954,6 +6262,10 @@ public final class SM_Base {
         bitField0_ = (bitField0_ & ~0x00000800);
         economySupportSupervisor_ = false;
         bitField0_ = (bitField0_ & ~0x00001000);
+        managePricing_ = false;
+        bitField0_ = (bitField0_ & ~0x00002000);
+        broadcastLive_ = false;
+        bitField0_ = (bitField0_ & ~0x00004000);
         return this;
       }
 
@@ -6034,6 +6346,14 @@ public final class SM_Base {
           to_bitField0_ |= 0x00001000;
         }
         result.economySupportSupervisor_ = economySupportSupervisor_;
+        if (((from_bitField0_ & 0x00002000) == 0x00002000)) {
+          to_bitField0_ |= 0x00002000;
+        }
+        result.managePricing_ = managePricing_;
+        if (((from_bitField0_ & 0x00004000) == 0x00004000)) {
+          to_bitField0_ |= 0x00004000;
+        }
+        result.broadcastLive_ = broadcastLive_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -6088,6 +6408,12 @@ public final class SM_Base {
         }
         if (other.hasEconomySupportSupervisor()) {
           setEconomySupportSupervisor(other.getEconomySupportSupervisor());
+        }
+        if (other.hasManagePricing()) {
+          setManagePricing(other.getManagePricing());
+        }
+        if (other.hasBroadcastLive()) {
+          setBroadcastLive(other.getBroadcastLive());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
@@ -6532,6 +6858,70 @@ public final class SM_Base {
         return this;
       }
 
+      private boolean managePricing_ ;
+      /**
+       * <code>optional bool manage_pricing = 14;</code>
+       */
+      public boolean hasManagePricing() {
+        return ((bitField0_ & 0x00002000) == 0x00002000);
+      }
+      /**
+       * <code>optional bool manage_pricing = 14;</code>
+       */
+      public boolean getManagePricing() {
+        return managePricing_;
+      }
+      /**
+       * <code>optional bool manage_pricing = 14;</code>
+       */
+      public Builder setManagePricing(boolean value) {
+        bitField0_ |= 0x00002000;
+        managePricing_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional bool manage_pricing = 14;</code>
+       */
+      public Builder clearManagePricing() {
+        bitField0_ = (bitField0_ & ~0x00002000);
+        managePricing_ = false;
+        onChanged();
+        return this;
+      }
+
+      private boolean broadcastLive_ ;
+      /**
+       * <code>optional bool broadcast_live = 15;</code>
+       */
+      public boolean hasBroadcastLive() {
+        return ((bitField0_ & 0x00004000) == 0x00004000);
+      }
+      /**
+       * <code>optional bool broadcast_live = 15;</code>
+       */
+      public boolean getBroadcastLive() {
+        return broadcastLive_;
+      }
+      /**
+       * <code>optional bool broadcast_live = 15;</code>
+       */
+      public Builder setBroadcastLive(boolean value) {
+        bitField0_ |= 0x00004000;
+        broadcastLive_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional bool broadcast_live = 15;</code>
+       */
+      public Builder clearBroadcastLive() {
+        bitField0_ = (bitField0_ & ~0x00004000);
+        broadcastLive_ = false;
+        onChanged();
+        return this;
+      }
+
       // @@protoc_insertion_point(builder_scope:CMsgAppRights)
     }
 
@@ -6605,43 +6995,46 @@ public final class SM_Base {
   static {
     java.lang.String[] descriptorData = {
       "\n\030steammessages_base.proto\032 google/proto" +
-      "buf/descriptor.proto\"\320\003\n\022CMsgProtoBufHea" +
+      "buf/descriptor.proto\"\370\003\n\022CMsgProtoBufHea" +
       "der\022\017\n\007steamid\030\001 \001(\006\022\030\n\020client_sessionid" +
       "\030\002 \001(\005\022\025\n\rrouting_appid\030\003 \001(\r\022*\n\014jobid_s" +
       "ource\030\n \001(\006:\02418446744073709551615\022*\n\014job" +
       "id_target\030\013 \001(\006:\02418446744073709551615\022\027\n" +
-      "\017target_job_name\030\014 \001(\t\022\022\n\007eresult\030\r \001(\005:" +
-      "\0012\022\025\n\rerror_message\030\016 \001(\t\022\n\n\002ip\030\017 \001(\r\022\032\n" +
-      "\022auth_account_flags\030\020 \001(\r\022\024\n\014token_sourc" +
-      "e\030\026 \001(\r\022\033\n\023admin_spoofing_user\030\027 \001(\010\022\032\n\017",
-      "transport_error\030\021 \001(\005:\0011\022\'\n\tmessageid\030\022 " +
-      "\001(\004:\02418446744073709551615\022\032\n\022publisher_g" +
-      "roup_id\030\023 \001(\r\022\r\n\005sysid\030\024 \001(\r\022\021\n\ttrace_ta" +
-      "g\030\025 \001(\004\"8\n\tCMsgMulti\022\025\n\rsize_unzipped\030\001 " +
+      "\017target_job_name\030\014 \001(\t\022\017\n\007seq_num\030\030 \001(\005\022" +
+      "\022\n\007eresult\030\r \001(\005:\0012\022\025\n\rerror_message\030\016 \001" +
+      "(\t\022\n\n\002ip\030\017 \001(\r\022\032\n\022auth_account_flags\030\020 \001" +
+      "(\r\022\024\n\014token_source\030\026 \001(\r\022\033\n\023admin_spoofi",
+      "ng_user\030\027 \001(\010\022\032\n\017transport_error\030\021 \001(\005:\001" +
+      "1\022\'\n\tmessageid\030\022 \001(\004:\024184467440737095516" +
+      "15\022\032\n\022publisher_group_id\030\023 \001(\r\022\r\n\005sysid\030" +
+      "\024 \001(\r\022\021\n\ttrace_tag\030\025 \001(\004\022\025\n\rwebapi_key_i" +
+      "d\030\031 \001(\r\"8\n\tCMsgMulti\022\025\n\rsize_unzipped\030\001 " +
       "\001(\r\022\024\n\014message_body\030\002 \001(\014\"+\n\023CMsgProtobu" +
       "fWrapped\022\024\n\014message_body\030\001 \001(\014\"\217\001\n\016CMsgA" +
       "uthTicket\022\016\n\006estate\030\001 \001(\r\022\022\n\007eresult\030\002 \001" +
       "(\r:\0012\022\017\n\007steamid\030\003 \001(\006\022\016\n\006gameid\030\004 \001(\006\022\024" +
-      "\n\014h_steam_pipe\030\005 \001(\r\022\022\n\nticket_crc\030\006 \001(\r" +
-      "\022\016\n\006ticket\030\007 \001(\014\"\333\001\n\024CCDDBAppDetailCommo",
+      "\n\014h_steam_pipe\030\005 \001(\r\022\022\n\nticket_crc\030\006 \001(\r",
+      "\022\016\n\006ticket\030\007 \001(\014\"\366\001\n\024CCDDBAppDetailCommo" +
       "n\022\r\n\005appid\030\001 \001(\r\022\014\n\004name\030\002 \001(\t\022\014\n\004icon\030\003" +
       " \001(\t\022\014\n\004logo\030\004 \001(\t\022\022\n\nlogo_small\030\005 \001(\t\022\014" +
       "\n\004tool\030\006 \001(\010\022\014\n\004demo\030\007 \001(\010\022\r\n\005media\030\010 \001(" +
       "\010\022\037\n\027community_visible_stats\030\t \001(\010\022\025\n\rfr" +
-      "iendly_name\030\n \001(\t\022\023\n\013propagation\030\013 \001(\t\"\277" +
-      "\002\n\rCMsgAppRights\022\021\n\tedit_info\030\001 \001(\010\022\017\n\007p" +
-      "ublish\030\002 \001(\010\022\027\n\017view_error_data\030\003 \001(\010\022\020\n" +
-      "\010download\030\004 \001(\010\022\025\n\rupload_cdkeys\030\005 \001(\010\022\027" +
-      "\n\017generate_cdkeys\030\006 \001(\010\022\027\n\017view_financia" +
-      "ls\030\007 \001(\010\022\022\n\nmanage_ceg\030\010 \001(\010\022\026\n\016manage_s",
-      "igning\030\t \001(\010\022\025\n\rmanage_cdkeys\030\n \001(\010\022\026\n\016e" +
-      "dit_marketing\030\013 \001(\010\022\027\n\017economy_support\030\014" +
-      " \001(\010\022\"\n\032economy_support_supervisor\030\r \001(\010" +
-      ":A\n\022msgpool_soft_limit\022\037.google.protobuf" +
-      ".MessageOptions\030\320\206\003 \001(\005:\00232:B\n\022msgpool_h" +
-      "ard_limit\022\037.google.protobuf.MessageOptio" +
-      "ns\030\321\206\003 \001(\005:\003384B.\n#telekinesis.message.p" +
-      "roto.generatedB\007SM_Base"
+      "iendly_name\030\n \001(\t\022\023\n\013propagation\030\013 \001(\t\022\031" +
+      "\n\021has_adult_content\030\014 \001(\010\"\357\002\n\rCMsgAppRig" +
+      "hts\022\021\n\tedit_info\030\001 \001(\010\022\017\n\007publish\030\002 \001(\010\022" +
+      "\027\n\017view_error_data\030\003 \001(\010\022\020\n\010download\030\004 \001" +
+      "(\010\022\025\n\rupload_cdkeys\030\005 \001(\010\022\027\n\017generate_cd",
+      "keys\030\006 \001(\010\022\027\n\017view_financials\030\007 \001(\010\022\022\n\nm" +
+      "anage_ceg\030\010 \001(\010\022\026\n\016manage_signing\030\t \001(\010\022" +
+      "\025\n\rmanage_cdkeys\030\n \001(\010\022\026\n\016edit_marketing" +
+      "\030\013 \001(\010\022\027\n\017economy_support\030\014 \001(\010\022\"\n\032econo" +
+      "my_support_supervisor\030\r \001(\010\022\026\n\016manage_pr" +
+      "icing\030\016 \001(\010\022\026\n\016broadcast_live\030\017 \001(\010:A\n\022m" +
+      "sgpool_soft_limit\022\037.google.protobuf.Mess" +
+      "ageOptions\030\320\206\003 \001(\005:\00232:B\n\022msgpool_hard_l" +
+      "imit\022\037.google.protobuf.MessageOptions\030\321\206" +
+      "\003 \001(\005:\003384B3\n#telekinesis.message.proto.",
+      "generatedB\007SM_BaseH\001\200\001\000"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -6661,7 +7054,7 @@ public final class SM_Base {
     internal_static_CMsgProtoBufHeader_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_CMsgProtoBufHeader_descriptor,
-        new java.lang.String[] { "Steamid", "ClientSessionid", "RoutingAppid", "JobidSource", "JobidTarget", "TargetJobName", "Eresult", "ErrorMessage", "Ip", "AuthAccountFlags", "TokenSource", "AdminSpoofingUser", "TransportError", "Messageid", "PublisherGroupId", "Sysid", "TraceTag", });
+        new java.lang.String[] { "Steamid", "ClientSessionid", "RoutingAppid", "JobidSource", "JobidTarget", "TargetJobName", "SeqNum", "Eresult", "ErrorMessage", "Ip", "AuthAccountFlags", "TokenSource", "AdminSpoofingUser", "TransportError", "Messageid", "PublisherGroupId", "Sysid", "TraceTag", "WebapiKeyId", });
     internal_static_CMsgMulti_descriptor =
       getDescriptor().getMessageTypes().get(1);
     internal_static_CMsgMulti_fieldAccessorTable = new
@@ -6685,13 +7078,13 @@ public final class SM_Base {
     internal_static_CCDDBAppDetailCommon_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_CCDDBAppDetailCommon_descriptor,
-        new java.lang.String[] { "Appid", "Name", "Icon", "Logo", "LogoSmall", "Tool", "Demo", "Media", "CommunityVisibleStats", "FriendlyName", "Propagation", });
+        new java.lang.String[] { "Appid", "Name", "Icon", "Logo", "LogoSmall", "Tool", "Demo", "Media", "CommunityVisibleStats", "FriendlyName", "Propagation", "HasAdultContent", });
     internal_static_CMsgAppRights_descriptor =
       getDescriptor().getMessageTypes().get(5);
     internal_static_CMsgAppRights_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_CMsgAppRights_descriptor,
-        new java.lang.String[] { "EditInfo", "Publish", "ViewErrorData", "Download", "UploadCdkeys", "GenerateCdkeys", "ViewFinancials", "ManageCeg", "ManageSigning", "ManageCdkeys", "EditMarketing", "EconomySupport", "EconomySupportSupervisor", });
+        new java.lang.String[] { "EditInfo", "Publish", "ViewErrorData", "Download", "UploadCdkeys", "GenerateCdkeys", "ViewFinancials", "ManageCeg", "ManageSigning", "ManageCdkeys", "EditMarketing", "EconomySupport", "EconomySupportSupervisor", "ManagePricing", "BroadcastLive", });
     msgpoolSoftLimit.internalInit(descriptor.getExtensions().get(0));
     msgpoolHardLimit.internalInit(descriptor.getExtensions().get(1));
     com.google.protobuf.DescriptorProtos.getDescriptor();

@@ -3,6 +3,9 @@ option java_outer_classname = "SM_Base";
 
 import "google/protobuf/descriptor.proto";
 
+option optimize_for = SPEED;
+option cc_generic_services = false;
+
 extend .google.protobuf.MessageOptions {
 	optional int32 msgpool_soft_limit = 50000 [default = 32];
 	optional int32 msgpool_hard_limit = 50001 [default = 384];
@@ -15,6 +18,7 @@ message CMsgProtoBufHeader {
 	optional fixed64 jobid_source = 10 [default = 18446744073709551615];
 	optional fixed64 jobid_target = 11 [default = 18446744073709551615];
 	optional string target_job_name = 12;
+	optional int32 seq_num = 24;
 	optional int32 eresult = 13 [default = 2];
 	optional string error_message = 14;
 	optional uint32 ip = 15;
@@ -26,6 +30,7 @@ message CMsgProtoBufHeader {
 	optional uint32 publisher_group_id = 19;
 	optional uint32 sysid = 20;
 	optional uint64 trace_tag = 21;
+	optional uint32 webapi_key_id = 25;
 }
 
 message CMsgMulti {
@@ -59,6 +64,7 @@ message CCDDBAppDetailCommon {
 	optional bool community_visible_stats = 9;
 	optional string friendly_name = 10;
 	optional string propagation = 11;
+	optional bool has_adult_content = 12;
 }
 
 message CMsgAppRights {
@@ -75,5 +81,7 @@ message CMsgAppRights {
 	optional bool edit_marketing = 11;
 	optional bool economy_support = 12;
 	optional bool economy_support_supervisor = 13;
+	optional bool manage_pricing = 14;
+	optional bool broadcast_live = 15;
 }
 
