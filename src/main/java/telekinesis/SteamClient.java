@@ -114,7 +114,6 @@ public class SteamClient extends Publisher<SteamClient> {
             heartbeatFunction = new IdleTimeoutFunction(workerGroup, msg.getOutOfGameHeartbeatSeconds()) {
                 @Override
                 protected void onTimout() {
-                    System.out.println("HEARTBEAT");
                     SM_ClientServer.CMsgClientHeartBeat.Builder msg = SM_ClientServer.CMsgClientHeartBeat.newBuilder();
                     connection.send(msg);
                 }

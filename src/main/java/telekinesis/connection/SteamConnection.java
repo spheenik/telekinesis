@@ -61,6 +61,10 @@ public class SteamConnection extends Publisher<SteamConnection.SteamConnectionCo
         messageRegistry.addRegistry(registry);
     }
 
+    public void removeRegistry(CodecRegistry registry) {
+        messageRegistry.removeRegistry(registry);
+    }
+
     public void connect(String host, int port) {
         Bootstrap b = new Bootstrap();
         b.group(workerGroup);

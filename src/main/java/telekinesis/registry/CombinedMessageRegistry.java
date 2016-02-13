@@ -20,6 +20,10 @@ public class CombinedMessageRegistry implements CodecRegistry {
         this.registries.add(registry);
     }
 
+    public void removeRegistry(CodecRegistry registry) {
+        this.registries.remove(registry);
+    }
+
     @Override
     public boolean knowsMessageType(int messageType) {
         for (CodecRegistry registry : registries) {
