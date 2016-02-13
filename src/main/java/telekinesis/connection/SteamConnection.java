@@ -12,6 +12,7 @@ import telekinesis.connection.codec.AESCodec;
 import telekinesis.connection.codec.FrameCodec;
 import telekinesis.connection.codec.MessageCodec;
 import telekinesis.message.proto.generated.steam.SM_Base;
+import telekinesis.message.proto.generated.steam.SM_ClientServer;
 import telekinesis.message.simple.ChannelEncryptRequest;
 import telekinesis.message.simple.ChannelEncryptResponse;
 import telekinesis.message.simple.ChannelEncryptResult;
@@ -36,6 +37,8 @@ public class SteamConnection extends Publisher<SteamConnection.SteamConnectionCo
     private final Logger log;
     private final EventLoopGroup workerGroup;
     private final CombinedMessageRegistry messageRegistry;
+    private final IdleTimeoutFunction heartbeatFunction;
+
 
     private ConnectionState connectionState;
     private SocketChannel channel;
@@ -55,6 +58,13 @@ public class SteamConnection extends Publisher<SteamConnection.SteamConnectionCo
         subscribe(ChannelEncryptRequest.class, this::handleChannelEncryptRequest);
         subscribe(ChannelEncryptResult.class, this::handleChannelEncryptResult);
         resetState();
+        this.heartbeatFunction = new IdleTimeoutFunction(workerGroup) {
+            @Override
+            protected void onTimout() {
+                SM_ClientServer.CMsgClientHeartBeat.Builder msg = SM_ClientServer.CMsgClientHeartBeat.newBuilder();
+                send(msg);
+            }
+        };
     }
 
     public void addRegistry(CodecRegistry registry) {
@@ -100,6 +110,7 @@ public class SteamConnection extends Publisher<SteamConnection.SteamConnectionCo
 
     public void disconnect() {
         if (channel != null && connectionState != ConnectionState.DISCONNECTING) {
+            disableHeartbeat();
             changeConnectionState(ConnectionState.DISCONNECTING);
             channel.close();
         }
@@ -152,6 +163,7 @@ public class SteamConnection extends Publisher<SteamConnection.SteamConnectionCo
     }
 
     protected void send(long targetJobId, Object body) {
+        heartbeatFunction.resetTimer();
         log.info("sending message " + body.getClass());
         Class<? extends Header> headerClass = messageRegistry.getHeaderClassForBody(body);
         if (headerClass == null) {
@@ -204,6 +216,14 @@ public class SteamConnection extends Publisher<SteamConnection.SteamConnectionCo
             changeConnectionState(ConnectionState.BROKEN);
         }
         aesCodec = null;
+    }
+
+    public void enableHeartbeat(int seconds) {
+        heartbeatFunction.enable(seconds);
+    }
+
+    public void disableHeartbeat() {
+        heartbeatFunction.disable();
     }
 
     public class SteamConnectionContext {

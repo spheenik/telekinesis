@@ -5,7 +5,6 @@ import io.netty.channel.EventLoopGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import telekinesis.connection.ConnectionState;
-import telekinesis.connection.IdleTimeoutFunction;
 import telekinesis.connection.SteamConnection;
 import telekinesis.message.proto.generated.steam.SM_ClientServer;
 import telekinesis.model.SteamClientDelegate;
@@ -33,7 +32,6 @@ public class SteamClient extends Publisher<SteamClient> {
     private final SteamClientDelegate credentials;
 
     private SteamConnection connection;
-    private IdleTimeoutFunction heartbeatFunction;
 
     public SteamClient(EventLoopGroup workerGroup, String id, SteamClientDelegate credentials) {
         this.workerGroup = workerGroup;
@@ -53,18 +51,7 @@ public class SteamClient extends Publisher<SteamClient> {
     }
 
     public void disconnect() {
-        if (heartbeatFunction != null) {
-            heartbeatFunction.cancel();
-            heartbeatFunction = null;
-        }
         connection.disconnect();
-    }
-
-    public void send(Object body) {
-        if (heartbeatFunction != null) {
-            heartbeatFunction.reset();
-        }
-        connection.send(body);
     }
 
     // TODO: only for testing, remove this
@@ -111,13 +98,7 @@ public class SteamClient extends Publisher<SteamClient> {
         log.info("received logon response");
         log.info(msg.toString());
         if (msg.getEresult() == EResult.OK.v()) {
-            heartbeatFunction = new IdleTimeoutFunction(workerGroup, msg.getOutOfGameHeartbeatSeconds()) {
-                @Override
-                protected void onTimout() {
-                    SM_ClientServer.CMsgClientHeartBeat.Builder msg = SM_ClientServer.CMsgClientHeartBeat.newBuilder();
-                    connection.send(msg);
-                }
-            };
+            connection.enableHeartbeat(msg.getOutOfGameHeartbeatSeconds());
         }
     }
 

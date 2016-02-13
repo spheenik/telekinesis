@@ -8,23 +8,30 @@ import java.util.concurrent.TimeUnit;
 public abstract class IdleTimeoutFunction {
 
     private final EventLoopGroup eventLoopGroup;
-    private final long timeoutNanos;
+    private long timeoutNanos;
     private long lastPing;
     private ScheduledFuture<?> timeoutFunc;
 
-    public IdleTimeoutFunction(EventLoopGroup eventLoopGroup, int timeoutSeconds) {
+    public IdleTimeoutFunction(EventLoopGroup eventLoopGroup) {
         this.eventLoopGroup = eventLoopGroup;
-        this.timeoutNanos = (long) timeoutSeconds * 1000000000L;
         this.lastPing = 0L;
+    }
+
+    public void enable(int timeoutSeconds) {
+        disable();
+        this.timeoutNanos = (long) timeoutSeconds * 1000000000L;
         schedule(new TimeoutFunction(), timeoutNanos);
     }
 
-    public void reset() {
-        lastPing = System.nanoTime();
+    public void disable() {
+        if (timeoutFunc != null) {
+            timeoutFunc.cancel(false);
+            timeoutFunc = null;
+        }
     }
 
-    public void cancel() {
-        timeoutFunc.cancel(false);
+    public void resetTimer() {
+        lastPing = System.nanoTime();
     }
 
     protected abstract void onTimout();
