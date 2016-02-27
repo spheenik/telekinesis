@@ -8,13 +8,13 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import org.slf4j.Logger;
 import telekinesis.connection.Message;
+import telekinesis.message.ClientMessageTypeRegistry;
 import telekinesis.message.proto.ProtoHeader;
 import telekinesis.message.proto.generated.steam.SM_Base;
 import telekinesis.model.Decodable;
 import telekinesis.model.Encodable;
 import telekinesis.model.Header;
 import telekinesis.model.steam.EMsg;
-import telekinesis.registry.CodecRegistry;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,9 +28,9 @@ public class MessageCodec extends ChannelDuplexHandler {
     private static final int PROTO_MASK = ~PROTO_FLAG;
 
     private final Logger log;
-    private final CodecRegistry registry;
+    private final ClientMessageTypeRegistry registry;
 
-    public MessageCodec(Logger log, CodecRegistry registry) {
+    public MessageCodec(Logger log, ClientMessageTypeRegistry registry) {
         this.log = log;
         this.registry = registry;
     }

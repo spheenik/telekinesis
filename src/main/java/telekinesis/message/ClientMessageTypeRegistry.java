@@ -1,8 +1,8 @@
-package telekinesis.registry;
+package telekinesis.message;
 
 import telekinesis.model.Header;
 
-public interface CodecRegistry {
+public interface ClientMessageTypeRegistry {
 
     boolean knowsMessageType(int messageType);
     boolean knowsBodyClass(Class<?> bodyClass);

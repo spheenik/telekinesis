@@ -1,32 +1,32 @@
-package telekinesis.registry;
+package telekinesis.message;
 
 import telekinesis.model.Header;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class CombinedMessageRegistry implements CodecRegistry {
+public class CombinedClientMessageTypeRegistry implements ClientMessageTypeRegistry {
 
-    private final List<CodecRegistry> registries;
+    private final List<ClientMessageTypeRegistry> registries;
 
-    public CombinedMessageRegistry(CodecRegistry... registries) {
+    public CombinedClientMessageTypeRegistry(ClientMessageTypeRegistry... registries) {
         this.registries = new ArrayList<>();
-        for (CodecRegistry registry : registries) {
+        for (ClientMessageTypeRegistry registry : registries) {
             this.registries.add(registry);
         }
     }
 
-    public void addRegistry(CodecRegistry registry) {
+    public void addRegistry(ClientMessageTypeRegistry registry) {
         this.registries.add(registry);
     }
 
-    public void removeRegistry(CodecRegistry registry) {
+    public void removeRegistry(ClientMessageTypeRegistry registry) {
         this.registries.remove(registry);
     }
 
     @Override
     public boolean knowsMessageType(int messageType) {
-        for (CodecRegistry registry : registries) {
+        for (ClientMessageTypeRegistry registry : registries) {
             if (registry.knowsMessageType(messageType)) {
                 return true;
             }
@@ -36,7 +36,7 @@ public class CombinedMessageRegistry implements CodecRegistry {
 
     @Override
     public boolean knowsBodyClass(Class<?> bodyClass) {
-        for (CodecRegistry registry : registries) {
+        for (ClientMessageTypeRegistry registry : registries) {
             if (registry.knowsBodyClass(bodyClass)) {
                 return true;
             }
@@ -46,7 +46,7 @@ public class CombinedMessageRegistry implements CodecRegistry {
 
     @Override
     public Class<? extends Header> getHeaderClassForMessageType(int messageType) {
-        for (CodecRegistry registry : registries) {
+        for (ClientMessageTypeRegistry registry : registries) {
             Class<? extends Header> result = registry.getHeaderClassForMessageType(messageType);
             if (result != null) {
                 return result;
@@ -57,7 +57,7 @@ public class CombinedMessageRegistry implements CodecRegistry {
 
     @Override
     public Class<? extends Header> getHeaderClassForBody(Object body) {
-        for (CodecRegistry registry : registries) {
+        for (ClientMessageTypeRegistry registry : registries) {
             Class<? extends Header> result = registry.getHeaderClassForBody(body);
             if (result != null) {
                 return result;
@@ -68,7 +68,7 @@ public class CombinedMessageRegistry implements CodecRegistry {
 
     @Override
     public Class<?> getBodyClassForMessageType(int messageType) {
-        for (CodecRegistry registry : registries) {
+        for (ClientMessageTypeRegistry registry : registries) {
             Class<?> result = registry.getBodyClassForMessageType(messageType);
             if (result != null) {
                 return result;
@@ -79,7 +79,7 @@ public class CombinedMessageRegistry implements CodecRegistry {
 
     @Override
     public Integer getMessageTypeForBody(Object body) {
-        for (CodecRegistry registry : registries) {
+        for (ClientMessageTypeRegistry registry : registries) {
             Integer result = registry.getMessageTypeForBody(body);
             if (result != null) {
                 return result;

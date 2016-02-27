@@ -13,6 +13,9 @@ import telekinesis.Util;
 import telekinesis.connection.codec.AESCodec;
 import telekinesis.connection.codec.FrameCodec;
 import telekinesis.connection.codec.MessageCodec;
+import telekinesis.message.ClientMessageTypeRegistry;
+import telekinesis.message.CombinedClientMessageTypeRegistry;
+import telekinesis.message.SimpleClientMessageTypeRegistry;
 import telekinesis.message.proto.generated.steam.SM_Base;
 import telekinesis.message.proto.generated.steam.SM_ClientServer;
 import telekinesis.message.simple.ChannelEncryptRequest;
@@ -22,15 +25,12 @@ import telekinesis.model.Header;
 import telekinesis.model.steam.EMsg;
 import telekinesis.model.steam.EResult;
 import telekinesis.model.steam.SteamId;
-import telekinesis.registry.CodecRegistry;
-import telekinesis.registry.CombinedMessageRegistry;
-import telekinesis.registry.MessageRegistry;
 
 import java.io.IOException;
 
 public class SteamConnection extends Publisher<SteamConnection> {
 
-    private static final MessageRegistry HANDLED_MESSAGES = new MessageRegistry()
+    private static final SimpleClientMessageTypeRegistry HANDLED_MESSAGES = new SimpleClientMessageTypeRegistry()
             .registerSimple(EMsg.ChannelEncryptRequest.v(), ChannelEncryptRequest.class)
             .registerSimple(EMsg.ChannelEncryptResponse.v(), ChannelEncryptResponse.class)
             .registerSimple(EMsg.ChannelEncryptResult.v(), ChannelEncryptResult.class)
@@ -38,7 +38,7 @@ public class SteamConnection extends Publisher<SteamConnection> {
 
     private final Logger log;
     private final EventLoopGroup workerGroup;
-    private final CombinedMessageRegistry messageRegistry;
+    private final CombinedClientMessageTypeRegistry messageRegistry;
     private final ClientMessageHandler messageHandler;
     private final MessageDispatcher selfHandledMessageDispatcher;
     private final IdleTimeoutFunction heartbeatFunction;
@@ -56,7 +56,7 @@ public class SteamConnection extends Publisher<SteamConnection> {
     public SteamConnection(EventLoopGroup workerGroup, ClientMessageHandler messageHandler, String id) {
         this.workerGroup = workerGroup;
         this.log = LoggerFactory.getLogger(id);
-        this.messageRegistry = new CombinedMessageRegistry(HANDLED_MESSAGES);
+        this.messageRegistry = new CombinedClientMessageTypeRegistry(HANDLED_MESSAGES);
         this.messageHandler = messageHandler;
 
         selfHandledMessageDispatcher = new MessageDispatcher();
@@ -75,11 +75,11 @@ public class SteamConnection extends Publisher<SteamConnection> {
         };
     }
 
-    public void addRegistry(CodecRegistry registry) {
+    public void addRegistry(ClientMessageTypeRegistry registry) {
         messageRegistry.addRegistry(registry);
     }
 
-    public void removeRegistry(CodecRegistry registry) {
+    public void removeRegistry(ClientMessageTypeRegistry registry) {
         messageRegistry.removeRegistry(registry);
     }
 

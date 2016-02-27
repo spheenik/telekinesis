@@ -7,11 +7,11 @@ import org.slf4j.LoggerFactory;
 import telekinesis.connection.ClientMessageContext;
 import telekinesis.connection.ConnectionState;
 import telekinesis.connection.SteamConnection;
+import telekinesis.message.SimpleClientMessageTypeRegistry;
 import telekinesis.message.proto.generated.steam.SM_ClientServer;
 import telekinesis.model.SteamClientDelegate;
 import telekinesis.model.steam.EMsg;
 import telekinesis.model.steam.EResult;
-import telekinesis.registry.MessageRegistry;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -20,7 +20,7 @@ import java.util.Set;
 
 public class SteamClient extends Publisher<SteamClient> implements ClientMessageHandler {
 
-    private static final MessageRegistry HANDLED_MESSAGES = new MessageRegistry()
+    private static final SimpleClientMessageTypeRegistry HANDLED_MESSAGES = new SimpleClientMessageTypeRegistry()
             .registerProto(EMsg.ClientLogon.v(), SM_ClientServer.CMsgClientLogon.class)
             .registerProto(EMsg.ClientLogOnResponse.v(), SM_ClientServer.CMsgClientLogonResponse.class)
             .registerProto(EMsg.ClientUpdateMachineAuth.v(), SM_ClientServer.CMsgClientUpdateMachineAuth.class)

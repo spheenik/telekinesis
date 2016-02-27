@@ -1,4 +1,4 @@
-package telekinesis.registry;
+package telekinesis.message;
 
 import com.google.protobuf.GeneratedMessage;
 import telekinesis.message.proto.ProtoHeader;
@@ -8,19 +8,19 @@ import telekinesis.model.Header;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MessageRegistry implements CodecRegistry {
+public class SimpleClientMessageTypeRegistry implements ClientMessageTypeRegistry {
 
     private Map<Integer, Entry> entriesByType = new HashMap<>();
     private Map<Class<?>, Entry> entriesByBodyClass = new HashMap<>();
 
-    public MessageRegistry registerSimple(int messageType, Class<?> bodyClass) {
+    public SimpleClientMessageTypeRegistry registerSimple(int messageType, Class<?> bodyClass) {
         Entry e = new Entry(messageType, SimpleHeader.class, bodyClass);
         entriesByType.put(messageType, e);
         entriesByBodyClass.put(bodyClass, e);
         return this;
     }
 
-    public MessageRegistry registerProto(int messageType, Class<? extends GeneratedMessage> bodyClass) {
+    public SimpleClientMessageTypeRegistry registerProto(int messageType, Class<? extends GeneratedMessage> bodyClass) {
         Entry e = new Entry(messageType, ProtoHeader.class, bodyClass);
         entriesByType.put(messageType, e);
         entriesByBodyClass.put(bodyClass, e);

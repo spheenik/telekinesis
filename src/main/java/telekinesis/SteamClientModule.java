@@ -1,9 +1,10 @@
 package telekinesis;
 
-import telekinesis.registry.CodecRegistry;
+
+import telekinesis.message.ClientMessageTypeRegistry;
 
 public interface SteamClientModule extends ClientMessageHandler {
 
-    CodecRegistry getHandledMessages();
+    ClientMessageTypeRegistry getHandledMessages();
 
 }
