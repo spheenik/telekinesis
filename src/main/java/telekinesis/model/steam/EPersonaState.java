@@ -3,7 +3,6 @@ package telekinesis.model.steam;
 import java.util.HashMap;
 
 public enum EPersonaState {
-
     Offline(0),
     Online(1),
     Busy(2),
@@ -14,7 +13,7 @@ public enum EPersonaState {
 
     private int code;
 
-    EPersonaState(int code) {
+    private EPersonaState(int code) {
         this.code = code;
     }
 
@@ -22,7 +21,7 @@ public enum EPersonaState {
         return code;
     }
 
-    private static HashMap<Integer, EPersonaState> values = new HashMap<>();
+    private static HashMap<Integer, EPersonaState> values = new HashMap<Integer, EPersonaState>();
 
     static {
         for (final EPersonaState type : EPersonaState.values()) {
@@ -33,5 +32,4 @@ public enum EPersonaState {
     public static EPersonaState f(int code) {
         return EPersonaState.values.get(code);
     }
-
 }

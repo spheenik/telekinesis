@@ -25,24 +25,24 @@ public class SteamId {
     private static final long TYPE_MASK = ((1L << TYPE_BITS) - 1);
     private static final long UNIVERSE_MASK = ((1L << UNIVERSE_BITS) - 1);
 
-    
+
     private final long id;
 
     public SteamId() {
         this(0L, 1, EAccountType.Individual, EUniverse.Public);
     }
-    
+
     public SteamId(long id) {
         this.id = id;
     }
-    
+
     public SteamId(long num, int instance, EAccountType type, EUniverse universe) {
-        this.id = 
-            ((num & NUM_MASK) << NUM_SHIFT)
-            | (((long) instance & INSTANCE_MASK) << INSTANCE_SHIFT)
-            | (((long) type.v() & TYPE_MASK) << TYPE_SHIFT)
-            | (((long) universe.v() & UNIVERSE_MASK) << UNIVERSE_SHIFT)
-            ;
+        this.id =
+                ((num & NUM_MASK) << NUM_SHIFT)
+                        | (((long) instance & INSTANCE_MASK) << INSTANCE_SHIFT)
+                        | (((long) type.v() & TYPE_MASK) << TYPE_SHIFT)
+                        | (((long) universe.v() & UNIVERSE_MASK) << UNIVERSE_SHIFT)
+        ;
     }
 
     public SteamId(String steamId) {
@@ -50,12 +50,12 @@ public class SteamId {
         if (!m.matches()) {
             throw new IllegalArgumentException();
         }
-        this.id = 
-            (((Long.parseLong(m.group("accountid")) << 1) | Long.parseLong(m.group("authserver")) & NUM_MASK) << NUM_SHIFT)
-            | ((1L & INSTANCE_MASK) << INSTANCE_SHIFT)
-            | (((long) EAccountType.Individual.v() & TYPE_MASK) << TYPE_SHIFT)
-            | ((Long.parseLong(m.group("universe")) & UNIVERSE_MASK) << UNIVERSE_SHIFT)
-            ;
+        this.id =
+                (((Long.parseLong(m.group("accountid")) << 1) | Long.parseLong(m.group("authserver")) & NUM_MASK) << NUM_SHIFT)
+                        | ((1L & INSTANCE_MASK) << INSTANCE_SHIFT)
+                        | (((long) EAccountType.Individual.v() & TYPE_MASK) << TYPE_SHIFT)
+                        | ((Long.parseLong(m.group("universe")) & UNIVERSE_MASK) << UNIVERSE_SHIFT)
+        ;
     }
 
     public long toLong() {

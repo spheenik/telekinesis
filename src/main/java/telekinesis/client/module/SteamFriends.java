@@ -1,16 +1,17 @@
 package telekinesis.client.module;
 
-import com.google.protobuf.ByteString;
 import telekinesis.client.SteamClientModule;
 import telekinesis.connection.ClientMessageContext;
 import telekinesis.message.ClientMessageTypeRegistry;
 import telekinesis.message.SimpleClientMessageTypeRegistry;
 import telekinesis.message.proto.generated.steam.SM_ClientServer;
+import telekinesis.model.steam.EChatEntryType;
 import telekinesis.model.steam.EMsg;
 import telekinesis.model.steam.EPersonaState;
+import telekinesis.util.CStringUtil;
 import telekinesis.util.MessageDispatcher;
 
-import java.io.UnsupportedEncodingException;
+import java.io.IOException;
 import java.time.Instant;
 
 public class SteamFriends extends SteamClientModule {
@@ -55,19 +56,41 @@ public class SteamFriends extends SteamClientModule {
         System.out.println(msg);
     }
 
-    public void handleClientFriendMsgIncoming(ClientMessageContext ctx, SM_ClientServer.CMsgClientFriendMsgIncoming msg) throws UnsupportedEncodingException {
+    public void handleClientFriendMsgIncoming(ClientMessageContext ctx, SM_ClientServer.CMsgClientFriendMsgIncoming msg) throws IOException {
+        EChatEntryType type = EChatEntryType.f(msg.getChatEntryType());
         System.out.println(msg);
+        switch(type) {
+            case Invalid:
+                break;
 
+            case ChatMsg:
+                String in = CStringUtil.decodeUtf8(msg.getMessage());
+                String out = String.format("You said: %s", in);
 
-        String in = new String(msg.toByteArray(), "UTF-8");
-        String out = String.format("You said: %s", in);
+                SM_ClientServer.CMsgClientFriendMsg.Builder builder = SM_ClientServer.CMsgClientFriendMsg.newBuilder();
+                builder.setSteamid(msg.getSteamidFrom());
+                builder.setChatEntryType(EChatEntryType.ChatMsg.v());
+                builder.setMessage(CStringUtil.encodeUtf8(out));
+                builder.setRtime32ServerTimestamp((int) Instant.now().getEpochSecond());
 
-        SM_ClientServer.CMsgClientFriendMsg.Builder builder = SM_ClientServer.CMsgClientFriendMsg.newBuilder();
-        builder.setSteamid(msg.getSteamidFrom());
-        builder.setMessage(ByteString.copyFrom(out.getBytes()));
-        builder.setRtime32ServerTimestamp((int) Instant.now().getEpochSecond());
+                steamClient.send(builder);
+                break;
 
-        steamClient.send(builder);
+            case Typing:
+                break;
+
+            case InviteGame:
+                break;
+
+            case Emote:
+                break;
+
+            case LobbyGameStart:
+                break;
+
+            case LeftConversation:
+                break;
+        }
     }
 
     public void setPersonaState(EPersonaState personaState) {
