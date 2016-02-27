@@ -4,6 +4,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import telekinesis.client.SteamClient;
 import telekinesis.model.SteamClientDelegate;
 
 import java.io.IOException;

@@ -1,4 +1,4 @@
-package telekinesis;
+package telekinesis.util;
 
 import java.util.HashMap;
 import java.util.LinkedHashSet;

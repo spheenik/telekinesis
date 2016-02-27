@@ -1,6 +1,7 @@
-package telekinesis;
+package telekinesis.util;
 
 import telekinesis.connection.ClientMessageContext;
+import telekinesis.model.ClientMessageHandler;
 
 public class MessageDispatcher extends Publisher<ClientMessageContext> implements ClientMessageHandler {
 

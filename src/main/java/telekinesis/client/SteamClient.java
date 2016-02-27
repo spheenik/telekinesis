@@ -1,4 +1,4 @@
-package telekinesis;
+package telekinesis.client;
 
 import com.google.protobuf.ByteString;
 import io.netty.channel.EventLoopGroup;
@@ -9,9 +9,12 @@ import telekinesis.connection.ConnectionState;
 import telekinesis.connection.SteamConnection;
 import telekinesis.message.SimpleClientMessageTypeRegistry;
 import telekinesis.message.proto.generated.steam.SM_ClientServer;
+import telekinesis.model.ClientMessageHandler;
 import telekinesis.model.SteamClientDelegate;
 import telekinesis.model.steam.EMsg;
 import telekinesis.model.steam.EResult;
+import telekinesis.util.MessageDispatcher;
+import telekinesis.util.Publisher;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;

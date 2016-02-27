@@ -1,4 +1,4 @@
-package telekinesis;
+package telekinesis.model;
 
 import telekinesis.connection.ClientMessageContext;
 

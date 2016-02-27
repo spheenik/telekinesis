@@ -6,10 +6,6 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import telekinesis.ClientMessageHandler;
-import telekinesis.MessageDispatcher;
-import telekinesis.Publisher;
-import telekinesis.Util;
 import telekinesis.connection.codec.AESCodec;
 import telekinesis.connection.codec.FrameCodec;
 import telekinesis.connection.codec.MessageCodec;
@@ -21,10 +17,13 @@ import telekinesis.message.proto.generated.steam.SM_ClientServer;
 import telekinesis.message.simple.ChannelEncryptRequest;
 import telekinesis.message.simple.ChannelEncryptResponse;
 import telekinesis.message.simple.ChannelEncryptResult;
+import telekinesis.model.ClientMessageHandler;
 import telekinesis.model.Header;
 import telekinesis.model.steam.EMsg;
 import telekinesis.model.steam.EResult;
 import telekinesis.model.steam.SteamId;
+import telekinesis.util.MessageDispatcher;
+import telekinesis.util.Publisher;
 
 import java.io.IOException;
 
@@ -179,7 +178,12 @@ public class SteamConnection extends Publisher<SteamConnection> {
         if (headerClass == null) {
             throw new RuntimeException("don't now header class for body of class " + body.getClass().getName());
         }
-        Header header = Util.newInstance(headerClass);
+        Header header;
+        try {
+            header = headerClass.newInstance();
+        } catch (Exception e) {
+            throw new RuntimeException("unable to create an instance of header class " + headerClass.getName(), e);
+        }
         Message message = new Message(header, body);
 
         header.setSteamId(steamId);

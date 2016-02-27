@@ -8,7 +8,7 @@
 	<logger name="client-1" level="debug" />
     <logger name="client-1-conn" level="debug" />
 
-    <logger name="telekinesis.SteamClient" level="debug" />
+    <logger name="telekinesis.client.SteamClient" level="debug" />
 
 	<root level="info">
 		<appender-ref ref="stdout" />
