@@ -22,6 +22,7 @@ import telekinesis.model.Header;
 import telekinesis.model.steam.EMsg;
 import telekinesis.model.steam.EResult;
 import telekinesis.model.steam.SteamId;
+import telekinesis.util.ClassUtil;
 import telekinesis.util.MessageDispatcher;
 import telekinesis.util.Publisher;
 
@@ -36,6 +37,7 @@ public class SteamConnection extends Publisher<SteamConnection> {
             .registerProto(EMsg.Multi.v(), SM_Base.CMsgMulti.class);
 
     private final Logger log;
+    private final Logger messageLog;
     private final EventLoopGroup workerGroup;
     private final CombinedClientMessageTypeRegistry messageRegistry;
     private final ClientMessageHandler messageHandler;
@@ -55,6 +57,7 @@ public class SteamConnection extends Publisher<SteamConnection> {
     public SteamConnection(EventLoopGroup workerGroup, ClientMessageHandler messageHandler, String id) {
         this.workerGroup = workerGroup;
         this.log = LoggerFactory.getLogger(id);
+        this.messageLog = LoggerFactory.getLogger(id + "-messages");
         this.messageRegistry = new CombinedClientMessageTypeRegistry(HANDLED_MESSAGES);
         this.messageHandler = messageHandler;
 
@@ -148,16 +151,21 @@ public class SteamConnection extends Publisher<SteamConnection> {
         @Override
         protected void channelRead0(ChannelHandlerContext channelHandlerContext, Message msg) throws Exception {
             Header h = msg.getHeader();
-            log.debug("received {}, sourceJobId={}, targetJobId={}", msg.getBody().getClass(), h.getSourceJobId(), h.getTargetJobId());
-            if (h.hasSteamId()) {
-                steamId = h.getSteamId();
+            if (messageLog.isTraceEnabled()) {
+                traceMessage("received", h.getSourceJobId(), h.getTargetJobId(), msg.getBody());
             }
-            if (h.hasSessionId()) {
-                sessionId = h.getSessionId();
-            }
-            ClientMessageContext ctx = new ClientMessageContext(SteamConnection.this, h.getSourceJobId(), h.getTargetJobId());
-            selfHandledMessageDispatcher.handleClientMessage(ctx, msg.getBody());
-            messageHandler.handleClientMessage(ctx, msg.getBody());
+            workerGroup.submit(() -> {
+                log.info("received {}, sourceJobId={}, targetJobId={}", ClassUtil.packageRelativeClassName(msg.getBody()), h.getSourceJobId(), h.getTargetJobId());
+                if (h.hasSteamId()) {
+                    steamId = h.getSteamId();
+                }
+                if (h.hasSessionId()) {
+                    sessionId = h.getSessionId();
+                }
+                ClientMessageContext ctx = new ClientMessageContext(SteamConnection.this, h.getSourceJobId(), h.getTargetJobId());
+                selfHandledMessageDispatcher.handleClientMessage(ctx, msg.getBody());
+                messageHandler.handleClientMessage(ctx, msg.getBody());
+            });
         }
 
         @Override
@@ -181,7 +189,11 @@ public class SteamConnection extends Publisher<SteamConnection> {
 
     protected void send(long sourceJobId, long targetJobId, Object body) {
         heartbeatFunction.resetTimer();
-        log.info("sending message " + body.getClass());
+        log.info("sending {}, sourceJobId={}, targetJobId={}", ClassUtil.packageRelativeClassName(body), sourceJobId, targetJobId);
+        if (messageLog.isTraceEnabled()) {
+            traceMessage("sending", sourceJobId, targetJobId, body);
+        }
+
         Class<? extends Header> headerClass = messageRegistry.getHeaderClassForBody(body);
         if (headerClass == null) {
             throw new RuntimeException("don't now header class for body of class " + body.getClass().getName());
@@ -249,4 +261,10 @@ public class SteamConnection extends Publisher<SteamConnection> {
         heartbeatFunction.disable();
     }
 
+    private void traceMessage(String prefix, long sourceJobId, long targetJobId, Object body) {
+        messageLog.trace("{} {}, sourceJobId={}, targetJobId={}", prefix, ClassUtil.packageRelativeClassName(body), sourceJobId, targetJobId);
+        messageLog.trace("");
+        messageLog.trace(body.toString());
+        messageLog.trace("-----------------------------------------------------------------------------------------------------");
+    }
 }

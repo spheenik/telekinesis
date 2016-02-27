@@ -43,7 +43,7 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
     private final Set<SteamClientModule> modules;
 
     private SteamConnection connection;
-    private long nextSourceJobId;
+    private long nextSourceJobId = 0L;
 
     public SteamClient(EventLoopGroup workerGroup, String id, SteamClientDelegate credentials) {
         this.workerGroup = workerGroup;
@@ -154,7 +154,6 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
 
     protected void handleClientLogonResponse(ClientMessageContext ctx, CMsgClientLogonResponse msg) {
         log.info("received logon response");
-        log.info(msg.toString());
         if (msg.getEresult() == EResult.OK.v()) {
             connection.enableHeartbeat(msg.getOutOfGameHeartbeatSeconds());
 
@@ -186,13 +185,10 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
 
     protected void handleClientAccountInfo(ClientMessageContext ctx, CMsgClientAccountInfo msg) {
         log.info("received account info");
-        //log.info(msg.toString());
     }
 
     protected void handleClientNewLoginKey(ClientMessageContext ctx, CMsgClientNewLoginKey msg) throws IOException {
         log.info("received client new login key");
-        log.info(msg.toString());
-
         CMsgClientNewLoginKeyAccepted.Builder response = CMsgClientNewLoginKeyAccepted.newBuilder();
         response.setUniqueId(msg.getUniqueId());
         ctx.reply(response);

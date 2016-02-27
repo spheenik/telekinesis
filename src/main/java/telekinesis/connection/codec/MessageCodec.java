@@ -41,7 +41,7 @@ public class MessageCodec extends ChannelDuplexHandler {
         try {
             int type = in.readInt() & PROTO_MASK;
             if (!registry.knowsMessageType(type)) {
-                log.debug("no decoder for message type {}", EMsg.n(type));
+                log.info("no decoder for message type {}", EMsg.n(type));
                 in.skipBytes(in.readableBytes());
                 return;
             }

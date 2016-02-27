@@ -18,6 +18,7 @@ public class SteamFriends extends SteamClientModule {
 
     private static final SimpleClientMessageTypeRegistry HANDLED_MESSAGES = new SimpleClientMessageTypeRegistry()
             .registerProto(EMsg.ClientChangeStatus.v(), SM_ClientServer.CMsgClientChangeStatus.class)
+            .registerProto(EMsg.ClientPersonaChangeResponse.v(), SM_ClientServer.CMsgPersonaChangeResponse.class)
             .registerProto(EMsg.ClientPersonaState.v(), SM_ClientServer.CMsgClientPersonaState.class)
             .registerProto(EMsg.ClientFriendsList.v(), SM_ClientServer.CMsgClientFriendsList.class)
             .registerProto(EMsg.ClientPlayerNicknameList.v(), SM_ClientServer.CMsgClientPlayerNicknameList.class)
@@ -28,6 +29,7 @@ public class SteamFriends extends SteamClientModule {
 
     public SteamFriends() {
         selfHandledMessageDispatcher = new MessageDispatcher();
+        selfHandledMessageDispatcher.subscribe(SM_ClientServer.CMsgPersonaChangeResponse.class, this::handleClientPersonaChangeResponse);
         selfHandledMessageDispatcher.subscribe(SM_ClientServer.CMsgClientPersonaState.class, this::handleClientPersonaState);
         selfHandledMessageDispatcher.subscribe(SM_ClientServer.CMsgClientFriendsList.class, this::handleClientFriendsList);
         selfHandledMessageDispatcher.subscribe(SM_ClientServer.CMsgClientPlayerNicknameList.class, this::handleClientPlayerNicknameList);
@@ -45,20 +47,16 @@ public class SteamFriends extends SteamClientModule {
     }
 
     public void handleClientPersonaState(ClientMessageContext ctx, SM_ClientServer.CMsgClientPersonaState msg) {
-        System.out.println(msg);
     }
 
     public void handleClientFriendsList(ClientMessageContext ctx, SM_ClientServer.CMsgClientFriendsList msg) {
-        System.out.println(msg);
     }
 
     public void handleClientPlayerNicknameList(ClientMessageContext ctx, SM_ClientServer.CMsgClientPlayerNicknameList msg) {
-        System.out.println(msg);
     }
 
     public void handleClientFriendMsgIncoming(ClientMessageContext ctx, SM_ClientServer.CMsgClientFriendMsgIncoming msg) throws IOException {
         EChatEntryType type = EChatEntryType.f(msg.getChatEntryType());
-        System.out.println(msg);
         switch(type) {
             case Invalid:
                 break;
@@ -99,5 +97,9 @@ public class SteamFriends extends SteamClientModule {
         builder.setPersonaState(personaState.v());
         steamClient.request(builder);
     }
+
+    private void handleClientPersonaChangeResponse(ClientMessageContext clientMessageContext, SM_ClientServer.CMsgPersonaChangeResponse msg) {
+    }
+
 
 }
