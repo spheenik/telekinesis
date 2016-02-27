@@ -4,6 +4,7 @@ import com.google.protobuf.ByteString;
 import io.netty.channel.EventLoopGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import telekinesis.client.module.SteamFriends;
 import telekinesis.connection.ClientMessageContext;
 import telekinesis.connection.ConnectionState;
 import telekinesis.connection.SteamConnection;
@@ -12,6 +13,7 @@ import telekinesis.message.proto.generated.steam.SM_ClientServer;
 import telekinesis.model.ClientMessageHandler;
 import telekinesis.model.SteamClientDelegate;
 import telekinesis.model.steam.EMsg;
+import telekinesis.model.steam.EPersonaState;
 import telekinesis.model.steam.EResult;
 import telekinesis.util.MessageDispatcher;
 import telekinesis.util.Publisher;
@@ -40,6 +42,7 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
     private final Set<SteamClientModule> modules;
 
     private SteamConnection connection;
+    private long nextSourceJobId;
 
     public SteamClient(EventLoopGroup workerGroup, String id, SteamClientDelegate credentials) {
         this.workerGroup = workerGroup;
@@ -52,29 +55,52 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
         selfHandledMessageDispatcher.subscribe(SM_ClientServer.CMsgClientUpdateMachineAuth.class, this::handleClientUpdateMachineAuth);
         selfHandledMessageDispatcher.subscribe(SM_ClientServer.CMsgClientAccountInfo.class, this::handleClientAccountInfo);
         selfHandledMessageDispatcher.subscribe(SM_ClientServer.CMsgClientNewLoginKey.class, this::handleClientNewLoginKey);
+
+        connection = new SteamConnection(workerGroup, this, log.getName() + "-conn");
+        connection.addRegistry(HANDLED_MESSAGES);
+        connection.subscribe(ConnectionState.class, this::handleConnectionStateChange);
+
+        registerModule(new SteamFriends());
     }
 
     public void registerModule(SteamClientModule module) {
         if (modules.add(module)) {
             connection.addRegistry(module.getHandledMessages());
+            module.setSteamClient(this);
         }
     }
 
     public void unregisterModule(SteamClientModule module) {
         if (modules.remove(module)) {
             connection.removeRegistry(module.getHandledMessages());
+            module.setSteamClient(null);
         }
     }
 
+    public <T extends SteamClientModule> T getModule(Class<T> moduleClass) {
+        for (SteamClientModule module : modules) {
+            if (moduleClass.isAssignableFrom(module.getClass())) {
+                return (T) module;
+            }
+        }
+        return null;
+    }
+
     public void connect() {
-        connection = new SteamConnection(workerGroup, this, log.getName() + "-conn");
-        connection.addRegistry(HANDLED_MESSAGES);
-        connection.subscribe(ConnectionState.class, this::handleConnectionStateChange);
         connection.connect("208.78.164.9", 27018);
     }
 
     public void disconnect() {
         connection.disconnect();
+    }
+
+    public void send(Object body) {
+        connection.send(body);
+    }
+
+    public void request(Object body) {
+        long jid = nextSourceJobId++;
+        connection.request(jid, body);
     }
 
     // TODO: only for testing, remove this
@@ -130,6 +156,8 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
         log.info(msg.toString());
         if (msg.getEresult() == EResult.OK.v()) {
             connection.enableHeartbeat(msg.getOutOfGameHeartbeatSeconds());
+
+            getModule(SteamFriends.class).setPersonaState(EPersonaState.Online);
         }
     }
 

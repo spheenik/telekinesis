@@ -10,6 +10,8 @@ import java.util.Map;
 
 public class SimpleClientMessageTypeRegistry implements ClientMessageTypeRegistry {
 
+    public static final SimpleClientMessageTypeRegistry EMPTY = new SimpleClientMessageTypeRegistry();
+
     private Map<Integer, Entry> entriesByType = new HashMap<>();
     private Map<Class<?>, Entry> entriesByBodyClass = new HashMap<>();
 

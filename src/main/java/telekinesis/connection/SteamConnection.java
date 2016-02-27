@@ -147,15 +147,15 @@ public class SteamConnection extends Publisher<SteamConnection> {
 
         @Override
         protected void channelRead0(ChannelHandlerContext channelHandlerContext, Message msg) throws Exception {
-            log.debug("received " + msg.getBody().getClass());
             Header h = msg.getHeader();
+            log.debug("received {}, sourceJobId={}, targetJobId={}", msg.getBody().getClass(), h.getSourceJobId(), h.getTargetJobId());
             if (h.hasSteamId()) {
                 steamId = h.getSteamId();
             }
             if (h.hasSessionId()) {
                 sessionId = h.getSessionId();
             }
-            ClientMessageContext ctx = new ClientMessageContext(SteamConnection.this, h.getSourceJobId());
+            ClientMessageContext ctx = new ClientMessageContext(SteamConnection.this, h.getSourceJobId(), h.getTargetJobId());
             selfHandledMessageDispatcher.handleClientMessage(ctx, msg.getBody());
             messageHandler.handleClientMessage(ctx, msg.getBody());
         }
@@ -168,10 +168,18 @@ public class SteamConnection extends Publisher<SteamConnection> {
     }
 
     public void send(Object body) {
-        send(-1L, body);
+        send(-1L, -1L, body);
     }
 
-    protected void send(long targetJobId, Object body) {
+    public void request(long sourceJobId, Object body) {
+        send(sourceJobId, -1L, body);
+    }
+
+    public void reply(long targetJobId, Object body) {
+        send(-1L, targetJobId, body);
+    }
+
+    protected void send(long sourceJobId, long targetJobId, Object body) {
         heartbeatFunction.resetTimer();
         log.info("sending message " + body.getClass());
         Class<? extends Header> headerClass = messageRegistry.getHeaderClassForBody(body);
@@ -188,6 +196,7 @@ public class SteamConnection extends Publisher<SteamConnection> {
 
         header.setSteamId(steamId);
         header.setSessionId(sessionId);
+        header.setSourceJobId(sourceJobId);
         header.setTargetJobId(targetJobId);
 
         channel.writeAndFlush(message);
