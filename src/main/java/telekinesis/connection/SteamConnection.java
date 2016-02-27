@@ -261,7 +261,7 @@ public class SteamConnection extends Publisher<SteamConnection> {
         heartbeatFunction.disable();
     }
 
-    private void traceMessage(String prefix, long sourceJobId, long targetJobId, Object body) {
+    private synchronized void traceMessage(String prefix, long sourceJobId, long targetJobId, Object body) {
         messageLog.trace("{} {}, sourceJobId={}, targetJobId={}", prefix, ClassUtil.packageRelativeClassName(body), sourceJobId, targetJobId);
         messageLog.trace("");
         messageLog.trace(body.toString());
