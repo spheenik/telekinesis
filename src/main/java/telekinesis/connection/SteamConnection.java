@@ -6,6 +6,8 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import telekinesis.ClientMessageHandler;
+import telekinesis.MessageDispatcher;
 import telekinesis.Publisher;
 import telekinesis.Util;
 import telekinesis.connection.codec.AESCodec;
@@ -26,7 +28,7 @@ import telekinesis.registry.MessageRegistry;
 
 import java.io.IOException;
 
-public class SteamConnection extends Publisher<SteamConnection.SteamConnectionContext> {
+public class SteamConnection extends Publisher<SteamConnection> {
 
     private static final MessageRegistry HANDLED_MESSAGES = new MessageRegistry()
             .registerSimple(EMsg.ChannelEncryptRequest.v(), ChannelEncryptRequest.class)
@@ -37,8 +39,9 @@ public class SteamConnection extends Publisher<SteamConnection.SteamConnectionCo
     private final Logger log;
     private final EventLoopGroup workerGroup;
     private final CombinedMessageRegistry messageRegistry;
+    private final ClientMessageHandler messageHandler;
+    private final MessageDispatcher selfHandledMessageDispatcher;
     private final IdleTimeoutFunction heartbeatFunction;
-
 
     private ConnectionState connectionState;
     private SocketChannel channel;
@@ -47,16 +50,21 @@ public class SteamConnection extends Publisher<SteamConnection.SteamConnectionCo
     private int sessionId;
 
     public SteamConnection(EventLoopGroup workerGroup) {
-        this(workerGroup, "conn-steam");
+        this(workerGroup, null, "conn-steam");
     }
 
-    public SteamConnection(EventLoopGroup workerGroup, String id) {
+    public SteamConnection(EventLoopGroup workerGroup, ClientMessageHandler messageHandler, String id) {
         this.workerGroup = workerGroup;
         this.log = LoggerFactory.getLogger(id);
         this.messageRegistry = new CombinedMessageRegistry(HANDLED_MESSAGES);
+        this.messageHandler = messageHandler;
+
+        selfHandledMessageDispatcher = new MessageDispatcher();
+        selfHandledMessageDispatcher.subscribe(ChannelEncryptRequest.class, this::handleChannelEncryptRequest);
+        selfHandledMessageDispatcher.subscribe(ChannelEncryptResult.class, this::handleChannelEncryptResult);
+
         connectionState = ConnectionState.DISCONNECTED;
-        subscribe(ChannelEncryptRequest.class, this::handleChannelEncryptRequest);
-        subscribe(ChannelEncryptResult.class, this::handleChannelEncryptResult);
+
         resetState();
         this.heartbeatFunction = new IdleTimeoutFunction(workerGroup) {
             @Override
@@ -148,7 +156,9 @@ public class SteamConnection extends Publisher<SteamConnection.SteamConnectionCo
             if (h.hasSessionId()) {
                 sessionId = h.getSessionId();
             }
-            publish(new SteamConnectionContext(h.getSourceJobId()), msg.getBody());
+            ClientMessageContext ctx = new ClientMessageContext(SteamConnection.this, h.getSourceJobId());
+            selfHandledMessageDispatcher.handleClientMessage(ctx, msg.getBody());
+            messageHandler.handleClientMessage(ctx, msg.getBody());
         }
 
         @Override
@@ -189,10 +199,10 @@ public class SteamConnection extends Publisher<SteamConnection.SteamConnectionCo
             return;
         }
         connectionState = newState;
-        publish(new SteamConnectionContext(-1L), connectionState);
+        publish(this, connectionState);
     }
 
-    protected void handleChannelEncryptRequest(SteamConnectionContext ctx, ChannelEncryptRequest in) throws IOException {
+    protected void handleChannelEncryptRequest(ClientMessageContext ctx, ChannelEncryptRequest in) throws IOException {
         log.info("got encryption request for universe {}, protocol version {}", in.getUniverse(), in.getProtocolVersion());
         aesCodec = new AESCodec(in.getUniverse());
         ChannelEncryptResponse out = new ChannelEncryptResponse();
@@ -202,7 +212,7 @@ public class SteamConnection extends Publisher<SteamConnection.SteamConnectionCo
         ctx.reply(out);
     }
 
-    protected void handleChannelEncryptResult(SteamConnectionContext ctx, ChannelEncryptResult msg) {
+    protected void handleChannelEncryptResult(ClientMessageContext ctx, ChannelEncryptResult msg) {
         if (msg.getResult() == EResult.OK) {
             log.info("encryption established");
             channel.pipeline().addAfter(
@@ -224,20 +234,6 @@ public class SteamConnection extends Publisher<SteamConnection.SteamConnectionCo
 
     public void disableHeartbeat() {
         heartbeatFunction.disable();
-    }
-
-    public class SteamConnectionContext {
-
-        private final long targetJobId;
-
-        public SteamConnectionContext(long targetJobId) {
-            this.targetJobId = targetJobId;
-        }
-
-        public void reply(Object body) {
-            SteamConnection.this.send(targetJobId, body);
-        }
-
     }
 
 }

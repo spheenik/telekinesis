@@ -4,6 +4,7 @@ import com.google.protobuf.ByteString;
 import io.netty.channel.EventLoopGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import telekinesis.connection.ClientMessageContext;
 import telekinesis.connection.ConnectionState;
 import telekinesis.connection.SteamConnection;
 import telekinesis.message.proto.generated.steam.SM_ClientServer;
@@ -14,8 +15,10 @@ import telekinesis.registry.MessageRegistry;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
-public class SteamClient extends Publisher<SteamClient> {
+public class SteamClient extends Publisher<SteamClient> implements ClientMessageHandler {
 
     private static final MessageRegistry HANDLED_MESSAGES = new MessageRegistry()
             .registerProto(EMsg.ClientLogon.v(), SM_ClientServer.CMsgClientLogon.class)
@@ -30,6 +33,8 @@ public class SteamClient extends Publisher<SteamClient> {
     private final Logger log;
     private final EventLoopGroup workerGroup;
     private final SteamClientDelegate credentials;
+    private final MessageDispatcher selfHandledMessageDispatcher;
+    private final Set<SteamClientModule> modules;
 
     private SteamConnection connection;
 
@@ -37,17 +42,32 @@ public class SteamClient extends Publisher<SteamClient> {
         this.workerGroup = workerGroup;
         this.log = LoggerFactory.getLogger(id);
         this.credentials = credentials;
+        this.modules = new LinkedHashSet<>();
+
+        selfHandledMessageDispatcher = new MessageDispatcher();
+        selfHandledMessageDispatcher.subscribe(SM_ClientServer.CMsgClientLogonResponse.class, this::handleClientLogonResponse);
+        selfHandledMessageDispatcher.subscribe(SM_ClientServer.CMsgClientUpdateMachineAuth.class, this::handleClientUpdateMachineAuth);
+        selfHandledMessageDispatcher.subscribe(SM_ClientServer.CMsgClientAccountInfo.class, this::handleClientAccountInfo);
+        selfHandledMessageDispatcher.subscribe(SM_ClientServer.CMsgClientNewLoginKey.class, this::handleClientNewLoginKey);
+    }
+
+    public void registerModule(SteamClientModule module) {
+        if (modules.add(module)) {
+            connection.addRegistry(module.getHandledMessages());
+        }
+    }
+
+    public void unregisterModule(SteamClientModule module) {
+        if (modules.remove(module)) {
+            connection.removeRegistry(module.getHandledMessages());
+        }
     }
 
     public void connect() {
-        connection = new SteamConnection(workerGroup, log.getName() + "-conn");
+        connection = new SteamConnection(workerGroup, this, log.getName() + "-conn");
         connection.addRegistry(HANDLED_MESSAGES);
-        connection.connect("208.78.164.9", 27018);
         connection.subscribe(ConnectionState.class, this::handleConnectionStateChange);
-        connection.subscribe(SM_ClientServer.CMsgClientLogonResponse.class, this::handleClientLogonResponse);
-        connection.subscribe(SM_ClientServer.CMsgClientUpdateMachineAuth.class, this::handleClientUpdateMachineAuth);
-        connection.subscribe(SM_ClientServer.CMsgClientAccountInfo.class, this::handleClientAccountInfo);
-        connection.subscribe(SM_ClientServer.CMsgClientNewLoginKey.class, this::handleClientNewLoginKey);
+        connection.connect("208.78.164.9", 27018);
     }
 
     public void disconnect() {
@@ -75,7 +95,7 @@ public class SteamClient extends Publisher<SteamClient> {
         connection.send(logon);
     }
 
-    protected void handleConnectionStateChange(SteamConnection.SteamConnectionContext ctx, ConnectionState newState) throws IOException {
+    protected void handleConnectionStateChange(SteamConnection conn, ConnectionState newState) throws IOException {
         switch(newState) {
             case ESTABLISHED:
                 performLogon();
@@ -94,7 +114,15 @@ public class SteamClient extends Publisher<SteamClient> {
         }
     }
 
-    protected void handleClientLogonResponse(SteamConnection.SteamConnectionContext ctx, SM_ClientServer.CMsgClientLogonResponse msg) {
+    @Override
+    public void handleClientMessage(ClientMessageContext ctx, Object message) {
+        selfHandledMessageDispatcher.handleClientMessage(ctx, message);
+        for (SteamClientModule module : modules) {
+            module.handleClientMessage(ctx, message);
+        }
+    }
+
+    protected void handleClientLogonResponse(ClientMessageContext ctx, SM_ClientServer.CMsgClientLogonResponse msg) {
         log.info("received logon response");
         log.info(msg.toString());
         if (msg.getEresult() == EResult.OK.v()) {
@@ -102,7 +130,7 @@ public class SteamClient extends Publisher<SteamClient> {
         }
     }
 
-    protected void handleClientUpdateMachineAuth(SteamConnection.SteamConnectionContext ctx, SM_ClientServer.CMsgClientUpdateMachineAuth msg) throws IOException, NoSuchAlgorithmException {
+    protected void handleClientUpdateMachineAuth(ClientMessageContext ctx, SM_ClientServer.CMsgClientUpdateMachineAuth msg) throws IOException, NoSuchAlgorithmException {
         log.info("received update machine auth request");
         log.info(msg.toString());
 
@@ -124,12 +152,12 @@ public class SteamClient extends Publisher<SteamClient> {
 
     }
 
-    protected void handleClientAccountInfo(SteamConnection.SteamConnectionContext ctx, SM_ClientServer.CMsgClientAccountInfo msg) {
+    protected void handleClientAccountInfo(ClientMessageContext ctx, SM_ClientServer.CMsgClientAccountInfo msg) {
         log.info("received account info");
         //log.info(msg.toString());
     }
 
-    protected void handleClientNewLoginKey(SteamConnection.SteamConnectionContext ctx, SM_ClientServer.CMsgClientNewLoginKey msg) throws IOException {
+    protected void handleClientNewLoginKey(ClientMessageContext ctx, SM_ClientServer.CMsgClientNewLoginKey msg) throws IOException {
         log.info("received client new login key");
         log.info(msg.toString());
 
