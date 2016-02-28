@@ -62,10 +62,10 @@ public class MessageCodec extends ChannelDuplexHandler {
                     log.info("no decoder for GC payload type {} for app id {}", gcBody.getMsgtype() & MessageFlag.MASK, gcBody.getAppid());
                     return;
                 }
-                body = instantiateAndDecodeObject(
-                        registry.getBodyClassForMessageType(gcBody.getAppid(), payloadType),
-                        Unpooled.wrappedBuffer(gcBody.getPayload().asReadOnlyByteBuffer())
-                );
+                ByteBuf payloadBuf = Unpooled.wrappedBuffer(gcBody.getPayload().asReadOnlyByteBuffer());
+                payloadBuf.readInt(); // skip over payload type
+                header = instantiateAndDecodeObject(registry.getHeaderClassForMessageType(gcBody.getAppid(), payloadType), payloadBuf);
+                body = instantiateAndDecodeObject(registry.getBodyClassForMessageType(gcBody.getAppid(), payloadType), payloadBuf);
                 ctx.fireChannelRead(new Message(gcBody.getAppid(), header, body));
             } else {
                 ctx.fireChannelRead(new Message(-1, header, body));
