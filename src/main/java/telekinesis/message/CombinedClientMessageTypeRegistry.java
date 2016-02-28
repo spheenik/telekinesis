@@ -25,9 +25,9 @@ public class CombinedClientMessageTypeRegistry implements ClientMessageTypeRegis
     }
 
     @Override
-    public boolean knowsMessageType(int messageType) {
+    public boolean knowsMessageType(int appId, int messageType) {
         for (ClientMessageTypeRegistry registry : registries) {
-            if (registry.knowsMessageType(messageType)) {
+            if (registry.knowsMessageType(appId, messageType)) {
                 return true;
             }
         }
@@ -35,9 +35,9 @@ public class CombinedClientMessageTypeRegistry implements ClientMessageTypeRegis
     }
 
     @Override
-    public boolean knowsBodyClass(Class<?> bodyClass) {
+    public boolean knowsBodyClass(int appId, Class<?> bodyClass) {
         for (ClientMessageTypeRegistry registry : registries) {
-            if (registry.knowsBodyClass(bodyClass)) {
+            if (registry.knowsBodyClass(appId, bodyClass)) {
                 return true;
             }
         }
@@ -45,9 +45,9 @@ public class CombinedClientMessageTypeRegistry implements ClientMessageTypeRegis
     }
 
     @Override
-    public Class<? extends Header> getHeaderClassForMessageType(int messageType) {
+    public Class<? extends Header> getHeaderClassForMessageType(int appId, int messageType) {
         for (ClientMessageTypeRegistry registry : registries) {
-            Class<? extends Header> result = registry.getHeaderClassForMessageType(messageType);
+            Class<? extends Header> result = registry.getHeaderClassForMessageType(appId, messageType);
             if (result != null) {
                 return result;
             }
@@ -56,9 +56,9 @@ public class CombinedClientMessageTypeRegistry implements ClientMessageTypeRegis
     }
 
     @Override
-    public Class<? extends Header> getHeaderClassForBody(Object body) {
+    public Class<? extends Header> getHeaderClassForBody(int appId, Object body) {
         for (ClientMessageTypeRegistry registry : registries) {
-            Class<? extends Header> result = registry.getHeaderClassForBody(body);
+            Class<? extends Header> result = registry.getHeaderClassForBody(appId, body);
             if (result != null) {
                 return result;
             }
@@ -67,9 +67,9 @@ public class CombinedClientMessageTypeRegistry implements ClientMessageTypeRegis
     }
 
     @Override
-    public Class<?> getBodyClassForMessageType(int messageType) {
+    public Class<?> getBodyClassForMessageType(int appId, int messageType) {
         for (ClientMessageTypeRegistry registry : registries) {
-            Class<?> result = registry.getBodyClassForMessageType(messageType);
+            Class<?> result = registry.getBodyClassForMessageType(appId, messageType);
             if (result != null) {
                 return result;
             }
@@ -78,9 +78,9 @@ public class CombinedClientMessageTypeRegistry implements ClientMessageTypeRegis
     }
 
     @Override
-    public Integer getMessageTypeForBody(Object body) {
+    public Integer getMessageTypeForBody(int appId, Object body) {
         for (ClientMessageTypeRegistry registry : registries) {
-            Integer result = registry.getMessageTypeForBody(body);
+            Integer result = registry.getMessageTypeForBody(appId, body);
             if (result != null) {
                 return result;
             }

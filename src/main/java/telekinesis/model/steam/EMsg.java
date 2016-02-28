@@ -1292,7 +1292,7 @@ public enum EMsg {
     }
 
     public static EMsg f(int code) {
-        return EMsg.values.get(code & 0x7FFFFFFF);
+        return EMsg.values.get(code);
     }
 
     public static String n(int code) {

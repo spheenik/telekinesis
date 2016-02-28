@@ -13,5 +13,8 @@ public interface Header {
     void setSourceJobId(long sourceJobId);
     long getTargetJobId();
     void setTargetJobId(long targetJobId);
-    
+
+    void setRoutingAppId(int appId);
+
 }
+

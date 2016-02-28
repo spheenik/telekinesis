@@ -67,6 +67,11 @@ public class ProtoHeader implements Header, Decodable, Encodable {
     }
 
     @Override
+    public void setRoutingAppId(int appId) {
+        delegate.setRoutingAppid(appId);
+    }
+
+    @Override
     public void decode(ByteBuf in) throws IOException {
         byte[] buf = new byte[in.readInt()];
         in.readBytes(buf);

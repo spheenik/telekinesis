@@ -17,6 +17,7 @@ import telekinesis.message.proto.generated.steam.SM_ClientServer;
 import telekinesis.message.simple.ChannelEncryptRequest;
 import telekinesis.message.simple.ChannelEncryptResponse;
 import telekinesis.message.simple.ChannelEncryptResult;
+import telekinesis.model.AppId;
 import telekinesis.model.ClientMessageHandler;
 import telekinesis.model.Header;
 import telekinesis.model.steam.EMsg;
@@ -34,7 +35,8 @@ public class SteamConnection extends Publisher<SteamConnection> {
             .registerSimple(EMsg.ChannelEncryptRequest.v(), ChannelEncryptRequest.class)
             .registerSimple(EMsg.ChannelEncryptResponse.v(), ChannelEncryptResponse.class)
             .registerSimple(EMsg.ChannelEncryptResult.v(), ChannelEncryptResult.class)
-            .registerProto(EMsg.Multi.v(), SM_Base.CMsgMulti.class);
+            .registerProto(EMsg.Multi.v(), SM_Base.CMsgMulti.class)
+            .registerProto(EMsg.ClientFromGC.v(), SM_ClientServer.CMsgGCClient.class);
 
     private final Logger log;
     private final Logger messageLog;
@@ -162,7 +164,7 @@ public class SteamConnection extends Publisher<SteamConnection> {
                 if (h.hasSessionId()) {
                     sessionId = h.getSessionId();
                 }
-                ClientMessageContext ctx = new ClientMessageContext(SteamConnection.this, h.getSourceJobId(), h.getTargetJobId());
+                ClientMessageContext ctx = new ClientMessageContext(SteamConnection.this, msg.getAppId(), h.getSourceJobId(), h.getTargetJobId());
                 selfHandledMessageDispatcher.handleClientMessage(ctx, msg.getBody());
                 messageHandler.handleClientMessage(ctx, msg.getBody());
             });
@@ -176,25 +178,29 @@ public class SteamConnection extends Publisher<SteamConnection> {
     }
 
     public void send(Object body) {
-        send(-1L, -1L, body);
+        send(AppId.STEAM, body);
     }
 
-    public void request(long sourceJobId, Object body) {
-        send(sourceJobId, -1L, body);
+    public void send(int appId, Object body) {
+        send(appId, -1L, -1L, body);
     }
 
-    public void reply(long targetJobId, Object body) {
-        send(-1L, targetJobId, body);
+    public void request(int appId, long sourceJobId, Object body) {
+        send(appId, sourceJobId, -1L, body);
     }
 
-    protected void send(long sourceJobId, long targetJobId, Object body) {
+    public void reply(int appId, long targetJobId, Object body) {
+        send(appId, -1L, targetJobId, body);
+    }
+
+    protected void send(int appId, long sourceJobId, long targetJobId, Object body) {
         heartbeatFunction.resetTimer();
         log.info("sending {}, sourceJobId={}, targetJobId={}", ClassUtil.packageRelativeClassName(body), sourceJobId, targetJobId);
         if (messageLog.isTraceEnabled()) {
             traceMessage("sending", sourceJobId, targetJobId, body);
         }
 
-        Class<? extends Header> headerClass = messageRegistry.getHeaderClassForBody(body);
+        Class<? extends Header> headerClass = messageRegistry.getHeaderClassForBody(appId, body);
         if (headerClass == null) {
             throw new RuntimeException("don't now header class for body of class " + body.getClass().getName());
         }
@@ -204,12 +210,15 @@ public class SteamConnection extends Publisher<SteamConnection> {
         } catch (Exception e) {
             throw new RuntimeException("unable to create an instance of header class " + headerClass.getName(), e);
         }
-        Message message = new Message(header, body);
+        Message message = new Message(appId, header, body);
 
         header.setSteamId(steamId);
         header.setSessionId(sessionId);
         header.setSourceJobId(sourceJobId);
         header.setTargetJobId(targetJobId);
+        if (appId != -1) {
+            header.setRoutingAppId(appId);
+        }
 
         channel.writeAndFlush(message);
     }

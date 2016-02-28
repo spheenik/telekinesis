@@ -61,6 +61,11 @@ public class SimpleHeader implements Header, Encodable, Decodable {
     }
 
     @Override
+    public void setRoutingAppId(int appId) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void decode(ByteBuf in) throws IOException {
         sourceJobId = in.readLong();
         targetJobId = in.readLong();

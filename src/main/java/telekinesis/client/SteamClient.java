@@ -9,6 +9,8 @@ import telekinesis.connection.ClientMessageContext;
 import telekinesis.connection.ConnectionState;
 import telekinesis.connection.SteamConnection;
 import telekinesis.message.SimpleClientMessageTypeRegistry;
+import telekinesis.message.proto.generated.steam.SM_ClientServer;
+import telekinesis.model.AppId;
 import telekinesis.model.ClientMessageHandler;
 import telekinesis.model.SteamClientDelegate;
 import telekinesis.model.steam.EMsg;
@@ -22,19 +24,17 @@ import java.security.NoSuchAlgorithmException;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import static telekinesis.message.proto.generated.steam.SM_ClientServer.*;
-
 public class SteamClient extends Publisher<SteamClient> implements ClientMessageHandler {
 
     private static final SimpleClientMessageTypeRegistry HANDLED_MESSAGES = new SimpleClientMessageTypeRegistry()
-            .registerProto(EMsg.ClientLogon.v(), CMsgClientLogon.class)
-            .registerProto(EMsg.ClientLogOnResponse.v(), CMsgClientLogonResponse.class)
-            .registerProto(EMsg.ClientUpdateMachineAuth.v(), CMsgClientUpdateMachineAuth.class)
-            .registerProto(EMsg.ClientUpdateMachineAuthResponse.v(), CMsgClientUpdateMachineAuthResponse.class)
-            .registerProto(EMsg.ClientAccountInfo.v(), CMsgClientAccountInfo.class)
-            .registerProto(EMsg.ClientNewLoginKey.v(), CMsgClientNewLoginKey.class)
-            .registerProto(EMsg.ClientNewLoginKeyAccepted.v(), CMsgClientNewLoginKeyAccepted.class)
-            .registerProto(EMsg.ClientHeartBeat.v(), CMsgClientHeartBeat.class);
+            .registerProto(EMsg.ClientLogon.v(), SM_ClientServer.CMsgClientLogon.class)
+            .registerProto(EMsg.ClientLogOnResponse.v(), SM_ClientServer.CMsgClientLogonResponse.class)
+            .registerProto(EMsg.ClientUpdateMachineAuth.v(), SM_ClientServer.CMsgClientUpdateMachineAuth.class)
+            .registerProto(EMsg.ClientUpdateMachineAuthResponse.v(), SM_ClientServer.CMsgClientUpdateMachineAuthResponse.class)
+            .registerProto(EMsg.ClientAccountInfo.v(), SM_ClientServer.CMsgClientAccountInfo.class)
+            .registerProto(EMsg.ClientNewLoginKey.v(), SM_ClientServer.CMsgClientNewLoginKey.class)
+            .registerProto(EMsg.ClientNewLoginKeyAccepted.v(), SM_ClientServer.CMsgClientNewLoginKeyAccepted.class)
+            .registerProto(EMsg.ClientHeartBeat.v(), SM_ClientServer.CMsgClientHeartBeat.class);
 
     private final Logger log;
     private final EventLoopGroup workerGroup;
@@ -43,6 +43,7 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
     private final Set<SteamClientModule> modules;
 
     private SteamConnection connection;
+    private SteamClientState clientState;
     private long nextSourceJobId = 0L;
 
     public SteamClient(EventLoopGroup workerGroup, String id, SteamClientDelegate credentials) {
@@ -52,10 +53,12 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
         this.modules = new LinkedHashSet<>();
 
         selfHandledMessageDispatcher = new MessageDispatcher();
-        selfHandledMessageDispatcher.subscribe(CMsgClientLogonResponse.class, this::handleClientLogonResponse);
-        selfHandledMessageDispatcher.subscribe(CMsgClientUpdateMachineAuth.class, this::handleClientUpdateMachineAuth);
-        selfHandledMessageDispatcher.subscribe(CMsgClientAccountInfo.class, this::handleClientAccountInfo);
-        selfHandledMessageDispatcher.subscribe(CMsgClientNewLoginKey.class, this::handleClientNewLoginKey);
+        selfHandledMessageDispatcher.subscribe(SM_ClientServer.CMsgClientLogonResponse.class, this::handleClientLogonResponse);
+        selfHandledMessageDispatcher.subscribe(SM_ClientServer.CMsgClientUpdateMachineAuth.class, this::handleClientUpdateMachineAuth);
+        selfHandledMessageDispatcher.subscribe(SM_ClientServer.CMsgClientAccountInfo.class, this::handleClientAccountInfo);
+        selfHandledMessageDispatcher.subscribe(SM_ClientServer.CMsgClientNewLoginKey.class, this::handleClientNewLoginKey);
+
+        clientState = SteamClientState.LOGGED_OFF;
 
         connection = new SteamConnection(workerGroup, this, log.getName() + "-conn");
         connection.addRegistry(HANDLED_MESSAGES);
@@ -99,9 +102,13 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
         connection.send(body);
     }
 
+    public void send(int appId, Object body) {
+        connection.send(appId, body);
+    }
+
     public void request(Object body) {
         long jid = nextSourceJobId++;
-        connection.request(jid, body);
+        connection.request(AppId.STEAM, jid, body);
     }
 
     // TODO: only for testing, remove this
@@ -111,7 +118,10 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
 
     protected void performLogon() throws IOException {
         log.info("performing logon for {}", credentials.getAccountName());
-        CMsgClientLogon.Builder logon = CMsgClientLogon.newBuilder();
+
+        changeClientState(SteamClientState.LOGGING_IN);
+
+        SM_ClientServer.CMsgClientLogon.Builder logon = SM_ClientServer.CMsgClientLogon.newBuilder();
         logon.setProtocolVersion(65575);
         logon.setAccountName(credentials.getAccountName());
         logon.setPassword(credentials.getPassword());
@@ -125,6 +135,14 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
         connection.send(logon);
     }
 
+    private void changeClientState(SteamClientState newState) {
+        if (clientState == newState) {
+            return;
+        }
+        clientState = newState;
+        publish(this, clientState);
+    }
+
     protected void handleConnectionStateChange(SteamConnection conn, ConnectionState newState) throws IOException {
         switch(newState) {
             case ESTABLISHED:
@@ -136,6 +154,7 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
             case CONNECTION_FAILED:
             case CLOSED:
             case LOST:
+                changeClientState(SteamClientState.LOGGED_OFF);
                 connection = null;
                 break;
 
@@ -152,24 +171,25 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
         }
     }
 
-    protected void handleClientLogonResponse(ClientMessageContext ctx, CMsgClientLogonResponse msg) {
+    protected void handleClientLogonResponse(ClientMessageContext ctx, SM_ClientServer.CMsgClientLogonResponse msg) {
         log.info("received logon response");
         if (msg.getEresult() == EResult.OK.v()) {
             connection.enableHeartbeat(msg.getOutOfGameHeartbeatSeconds());
 
             getModule(SteamFriends.class).setPersonaState(EPersonaState.Online);
+            changeClientState(SteamClientState.LOGGED_ON);
+        } else {
+            changeClientState(SteamClientState.LOGON_FAILED);
         }
     }
 
-    protected void handleClientUpdateMachineAuth(ClientMessageContext ctx, CMsgClientUpdateMachineAuth msg) throws IOException, NoSuchAlgorithmException {
+    protected void handleClientUpdateMachineAuth(ClientMessageContext ctx, SM_ClientServer.CMsgClientUpdateMachineAuth msg) throws IOException, NoSuchAlgorithmException {
         log.info("received update machine auth request");
-        log.info(msg.toString());
-
         if (msg.getCubtowrite() != msg.getBytes().size()) {
             throw new IOException("assert failed: bytes.size != cubtowrite");
         }
 
-        CMsgClientUpdateMachineAuthResponse.Builder builder = CMsgClientUpdateMachineAuthResponse.newBuilder();
+        SM_ClientServer.CMsgClientUpdateMachineAuthResponse.Builder builder = SM_ClientServer.CMsgClientUpdateMachineAuthResponse.newBuilder();
         try {
             credentials.writeSentry(msg.getFilename(), msg.getOffset(), msg.getBytes());
             builder.setShaFile(ByteString.copyFrom(credentials.getSentrySha1()));
@@ -183,13 +203,13 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
 
     }
 
-    protected void handleClientAccountInfo(ClientMessageContext ctx, CMsgClientAccountInfo msg) {
+    protected void handleClientAccountInfo(ClientMessageContext ctx, SM_ClientServer.CMsgClientAccountInfo msg) {
         log.info("received account info");
     }
 
-    protected void handleClientNewLoginKey(ClientMessageContext ctx, CMsgClientNewLoginKey msg) throws IOException {
+    protected void handleClientNewLoginKey(ClientMessageContext ctx, SM_ClientServer.CMsgClientNewLoginKey msg) throws IOException {
         log.info("received client new login key");
-        CMsgClientNewLoginKeyAccepted.Builder response = CMsgClientNewLoginKeyAccepted.newBuilder();
+        SM_ClientServer.CMsgClientNewLoginKeyAccepted.Builder response = SM_ClientServer.CMsgClientNewLoginKeyAccepted.newBuilder();
         response.setUniqueId(msg.getUniqueId());
         ctx.reply(response);
     }

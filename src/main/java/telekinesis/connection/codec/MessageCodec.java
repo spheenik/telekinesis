@@ -3,14 +3,17 @@ package telekinesis.connection.codec;
 import com.google.protobuf.GeneratedMessage;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import org.slf4j.Logger;
 import telekinesis.connection.Message;
 import telekinesis.message.ClientMessageTypeRegistry;
-import telekinesis.message.proto.ProtoHeader;
+import telekinesis.message.MessageFlag;
 import telekinesis.message.proto.generated.steam.SM_Base;
+import telekinesis.message.proto.generated.steam.SM_ClientServer;
+import telekinesis.model.AppId;
 import telekinesis.model.Decodable;
 import telekinesis.model.Encodable;
 import telekinesis.model.Header;
@@ -24,9 +27,6 @@ import java.util.zip.ZipInputStream;
 
 public class MessageCodec extends ChannelDuplexHandler {
 
-    private static final int PROTO_FLAG = 0x80000000;
-    private static final int PROTO_MASK = ~PROTO_FLAG;
-
     private final Logger log;
     private final ClientMessageTypeRegistry registry;
 
@@ -39,22 +39,34 @@ public class MessageCodec extends ChannelDuplexHandler {
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         ByteBuf in = (ByteBuf) msg;
         try {
-            int type = in.readInt() & PROTO_MASK;
-            if (!registry.knowsMessageType(type)) {
-                log.info("no decoder for message type {}", EMsg.n(type));
+            int type = in.readInt();
+            if (!registry.knowsMessageType(AppId.STEAM, type)) {
+                log.info("no decoder for message type {}", EMsg.n(type & MessageFlag.MASK));
                 in.skipBytes(in.readableBytes());
                 return;
             }
-            Header header = instantiateAndDecodeObject(registry.getHeaderClassForMessageType(type), in);
-            Object body = instantiateAndDecodeObject(registry.getBodyClassForMessageType(type), in);
+            Header header = instantiateAndDecodeObject(registry.getHeaderClassForMessageType(AppId.STEAM, type), in);
+            Object body = instantiateAndDecodeObject(registry.getBodyClassForMessageType(AppId.STEAM, type), in);
             if (in.readableBytes() != 0) {
                 log.debug("discarding {} extra bytes not decoded by message", in.readableBytes());
                 in.skipBytes(in.readableBytes());
             }
             if (body instanceof SM_Base.CMsgMulti) {
                 unpackMulti(ctx, (SM_Base.CMsgMulti) body);
+            } else if (body instanceof SM_ClientServer.CMsgGCClient) {
+                SM_ClientServer.CMsgGCClient gcBody = (SM_ClientServer.CMsgGCClient) body;
+                int payloadType = gcBody.getMsgtype() | MessageFlag.GC;
+                if (!registry.knowsMessageType(gcBody.getAppid(), payloadType)) {
+                    log.info("no decoder for GC payload type {} for app id {}", gcBody.getMsgtype() & MessageFlag.MASK, gcBody.getAppid());
+                    return;
+                }
+                body = instantiateAndDecodeObject(
+                        registry.getBodyClassForMessageType(gcBody.getAppid(), payloadType),
+                        Unpooled.wrappedBuffer(gcBody.getPayload().asReadOnlyByteBuffer())
+                );
+                ctx.fireChannelRead(new Message(gcBody.getAppid(), header, body));
             } else {
-                ctx.fireChannelRead(new Message(header, body));
+                ctx.fireChannelRead(new Message(-1, header, body));
             }
         } finally {
             in.release();
@@ -98,13 +110,25 @@ public class MessageCodec extends ChannelDuplexHandler {
     @Override
     public void write(ChannelHandlerContext ctx, Object msgObj, ChannelPromise promise) throws Exception {
         Message msg = (Message) msgObj;
-        Integer type = registry.getMessageTypeForBody(msg.getBody());
+        Integer type = registry.getMessageTypeForBody(msg.getAppId(), msg.getBody());
         if (type == null) {
-            throw new IOException("unable to find message type for body class " + msg.getBody().getClass().getName());
+            throw new IOException(
+                    String.format("unable to find message type for body class %s and app id %s", msg.getBody().getClass().getName(), msg.getAppId())
+            );
         }
+        if ((type & MessageFlag.GC) != 0) {
+            GeneratedMessage.Builder gcPayload = (GeneratedMessage.Builder) msg.getBody();
+            SM_ClientServer.CMsgGCClient.Builder gcBody = SM_ClientServer.CMsgGCClient.newBuilder();
+            gcBody.setAppid(msg.getAppId());
+            gcBody.setMsgtype(type & ~MessageFlag.GC);
+            gcBody.setPayload(gcPayload.build().toByteString());
+
+            type = EMsg.ClientToGC.v() | MessageFlag.PROTO;
+            msg = msg.withReplacedBody(gcBody);
+        }
+
         ByteBuf out = ctx.alloc().heapBuffer().order(ByteOrder.LITTLE_ENDIAN);
-        int flag = msg.getHeader() instanceof ProtoHeader ? PROTO_FLAG : 0;
-        out.writeInt(type | flag);
+        out.writeInt(type);
         encodeObject(msg.getHeader(), out);
         encodeObject(msg.getBody(), out);
         ctx.writeAndFlush(out, promise);
