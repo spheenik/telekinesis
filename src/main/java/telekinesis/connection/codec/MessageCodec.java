@@ -1,5 +1,6 @@
 package telekinesis.connection.codec;
 
+import com.google.protobuf.ByteString;
 import com.google.protobuf.GeneratedMessage;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
@@ -11,6 +12,7 @@ import org.slf4j.Logger;
 import telekinesis.connection.Message;
 import telekinesis.message.ClientMessageTypeRegistry;
 import telekinesis.message.MessageFlag;
+import telekinesis.message.proto.ProtoHeader;
 import telekinesis.message.proto.generated.steam.SM_Base;
 import telekinesis.message.proto.generated.steam.SM_ClientServer;
 import telekinesis.model.AppId;
@@ -117,14 +119,24 @@ public class MessageCodec extends ChannelDuplexHandler {
             );
         }
         if ((type & MessageFlag.GC) != 0) {
-            GeneratedMessage.Builder gcPayload = (GeneratedMessage.Builder) msg.getBody();
-            SM_ClientServer.CMsgGCClient.Builder gcBody = SM_ClientServer.CMsgGCClient.newBuilder();
-            gcBody.setAppid(msg.getAppId());
-            gcBody.setMsgtype(type & ~MessageFlag.GC);
-            gcBody.setPayload(gcPayload.build().toByteString());
+            type = type & ~MessageFlag.GC;
+
+            ProtoHeader innerHeader = new ProtoHeader();
+
+            ByteBuf innerOut = ctx.alloc().heapBuffer().order(ByteOrder.LITTLE_ENDIAN);
+            innerOut.writeInt(type);
+            encodeObject(innerHeader, innerOut);
+            encodeObject(msg.getBody(), innerOut);
+
+            SM_ClientServer.CMsgGCClient.Builder newBody = SM_ClientServer.CMsgGCClient.newBuilder();
+            newBody.setAppid(msg.getAppId());
+            newBody.setMsgtype(type);
+            newBody.setPayload(ByteString.copyFrom(innerOut.nioBuffer()));
+
+            msg.getHeader().setRoutingAppId(msg.getAppId());
+            msg = msg.withReplacedBody(newBody);
 
             type = EMsg.ClientToGC.v() | MessageFlag.PROTO;
-            msg = msg.withReplacedBody(gcBody);
         }
 
         ByteBuf out = ctx.alloc().heapBuffer().order(ByteOrder.LITTLE_ENDIAN);

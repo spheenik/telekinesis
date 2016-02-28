@@ -216,10 +216,6 @@ public class SteamConnection extends Publisher<SteamConnection> {
         header.setSessionId(sessionId);
         header.setSourceJobId(sourceJobId);
         header.setTargetJobId(targetJobId);
-        if (appId != -1) {
-            header.setRoutingAppId(appId);
-        }
-
         channel.writeAndFlush(message);
     }
 
