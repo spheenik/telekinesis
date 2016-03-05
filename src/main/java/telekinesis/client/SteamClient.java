@@ -4,6 +4,7 @@ import com.google.protobuf.ByteString;
 import io.netty.channel.EventLoopGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import telekinesis.client.module.GameConnectTokens;
 import telekinesis.client.module.SteamFriends;
 import telekinesis.connection.ClientMessageContext;
 import telekinesis.connection.ConnectionState;
@@ -65,6 +66,7 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
         connection.subscribe(ConnectionState.class, this::handleConnectionStateChange);
 
         registerModule(new SteamFriends());
+        registerModule(new GameConnectTokens());
     }
 
     public void registerModule(SteamClientModule module) {
