@@ -44,6 +44,7 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
     private final Set<SteamClientModule> modules;
 
     private SteamConnection connection;
+    private int publicIp;
     private SteamClientState clientState;
     private long nextSourceJobId = 0L;
 
@@ -180,6 +181,7 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
 
             getModule(SteamFriends.class).setPersonaState(EPersonaState.Online);
             changeClientState(SteamClientState.LOGGED_ON);
+            publicIp = msg.getPublicIp();
         } else {
             changeClientState(SteamClientState.LOGON_FAILED);
         }
@@ -215,4 +217,10 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
         response.setUniqueId(msg.getUniqueId());
         ctx.reply(response);
     }
+
+    public int getPublicIp() {
+        return publicIp;
+    }
+
+
 }
