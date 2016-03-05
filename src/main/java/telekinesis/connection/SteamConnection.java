@@ -272,4 +272,12 @@ public class SteamConnection extends Publisher<SteamConnection> {
         messageLog.trace(body.toString());
         messageLog.trace("-----------------------------------------------------------------------------------------------------");
     }
+
+    public long getSteamId() {
+        return steamId;
+    }
+
+    public int getSessionId() {
+        return sessionId;
+    }
 }

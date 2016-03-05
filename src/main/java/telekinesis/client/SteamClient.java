@@ -223,4 +223,7 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
     }
 
 
+    public long getSteamId() {
+        return connection.getSteamId();
+    }
 }

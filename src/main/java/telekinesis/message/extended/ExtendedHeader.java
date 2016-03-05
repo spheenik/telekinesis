@@ -1,4 +1,4 @@
-package telekinesis.message.simple;
+package telekinesis.message.extended;
 
 import io.netty.buffer.ByteBuf;
 import telekinesis.model.Decodable;
@@ -7,37 +7,41 @@ import telekinesis.model.Header;
 
 import java.io.IOException;
 
-public class SimpleHeader implements Header, Encodable, Decodable {
+public class ExtendedHeader implements Header, Encodable, Decodable {
 
+    private long steamId;
+    private int sessionId;
     private long sourceJobId = -1L;
     private long targetJobId = -1L;
 
     @Override
     public boolean hasSteamId() {
-        return false;
+        return true;
     }
 
     @Override
     public long getSteamId() {
-        throw new UnsupportedOperationException();
+        return steamId;
     }
 
     @Override
     public void setSteamId(long steamId) {
+        this.steamId = steamId;
     }
 
     @Override
     public boolean hasSessionId() {
-        return false;
+        return true;
     }
 
     @Override
     public int getSessionId() {
-        throw new UnsupportedOperationException();
+        return sessionId;
     }
 
     @Override
     public void setSessionId(int sessionId) {
+        this.sessionId = sessionId;
     }
 
     @Override
@@ -67,20 +71,32 @@ public class SimpleHeader implements Header, Encodable, Decodable {
 
     @Override
     public void decode(ByteBuf in) throws IOException {
-        sourceJobId = in.readLong();
+        in.skipBytes(1); // headerSize;
+        in.skipBytes(2); // headerVersion
         targetJobId = in.readLong();
+        sourceJobId = in.readLong();
+        in.skipBytes(1); // headerCanary
+        steamId = in.readLong();
+        sessionId = in.readInt();
     }
 
     @Override
     public void encode(ByteBuf out) throws IOException {
-        out.writeLong(sourceJobId);
+        out.writeByte(36);
+        out.writeShort(2);
         out.writeLong(targetJobId);
+        out.writeLong(sourceJobId);
+        out.writeByte(239);
+        out.writeLong(steamId);
+        out.writeInt(sessionId);
     }
 
     @Override
     public String toString() {
-        return "SimpleHeader{" +
-                "sourceJobId=" + sourceJobId +
+        return "ExtendedHeader{" +
+                "steamId=" + steamId +
+                ", sessionId=" + sessionId +
+                ", sourceJobId=" + sourceJobId +
                 ", targetJobId=" + targetJobId +
                 '}';
     }

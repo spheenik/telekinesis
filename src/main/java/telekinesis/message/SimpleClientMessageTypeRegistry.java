@@ -1,6 +1,7 @@
 package telekinesis.message;
 
 import com.google.protobuf.GeneratedMessage;
+import telekinesis.message.extended.ExtendedHeader;
 import telekinesis.message.proto.ProtoHeader;
 import telekinesis.message.simple.SimpleHeader;
 import telekinesis.model.AppId;
@@ -19,6 +20,10 @@ public class SimpleClientMessageTypeRegistry implements ClientMessageTypeRegistr
 
     public SimpleClientMessageTypeRegistry registerSimple(int messageType, Class<?> bodyClass) {
         return registerMessageType(AppId.STEAM, messageType, SimpleHeader.class, bodyClass);
+    }
+
+    public SimpleClientMessageTypeRegistry registerExtended(int messageType, Class<?> bodyClass) {
+        return registerMessageType(AppId.STEAM, messageType, ExtendedHeader.class, bodyClass);
     }
 
     public SimpleClientMessageTypeRegistry registerProto(int messageType, Class<? extends GeneratedMessage> bodyClass) {
