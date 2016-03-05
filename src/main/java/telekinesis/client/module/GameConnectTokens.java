@@ -48,5 +48,9 @@ public class GameConnectTokens extends SteamClientModule {
         return tokens.removeFirst();
     }
 
+    public int getNumTokensLeft() {
+        return tokens.size();
+    }
+
 
 }
