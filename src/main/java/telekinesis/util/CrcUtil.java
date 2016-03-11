@@ -12,4 +12,9 @@ public class CrcUtil {
         return (int) crc32.getValue();
     }
 
+    public static int crc16(ByteString in) {
+        int c = crc32(in);
+        return ((c >>> 16) ^ c) & 0xffff;
+    }
+
 }
