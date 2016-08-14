@@ -94,7 +94,7 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
     }
 
     public void connect() {
-        connection.connect("208.78.164.9", 27018);
+        connection.connect("162.254.195.44", 27020);
     }
 
     public void disconnect() {
