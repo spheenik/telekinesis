@@ -1,7 +1,14 @@
 package telekinesis.connection;
 
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.*;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import org.slf4j.Logger;
@@ -157,16 +164,20 @@ public class SteamConnection extends Publisher<SteamConnection> {
                 traceMessage("received", h.getSourceJobId(), h.getTargetJobId(), msg.getBody());
             }
             workerGroup.submit(() -> {
-                log.info("received {}, sourceJobId={}, targetJobId={}", ClassUtil.packageRelativeClassName(msg.getBody()), h.getSourceJobId(), h.getTargetJobId());
-                if (h.hasSteamId()) {
-                    steamId = h.getSteamId();
+                try {
+                    log.info("received {}, sourceJobId={}, targetJobId={}", ClassUtil.packageRelativeClassName(msg.getBody()), h.getSourceJobId(), h.getTargetJobId());
+                    if (h.hasSteamId()) {
+                        steamId = h.getSteamId();
+                    }
+                    if (h.hasSessionId()) {
+                        sessionId = h.getSessionId();
+                    }
+                    ClientMessageContext ctx = new ClientMessageContext(SteamConnection.this, msg.getAppId(), h.getSourceJobId(), h.getTargetJobId());
+                    selfHandledMessageDispatcher.handleClientMessage(ctx, msg.getBody());
+                    messageHandler.handleClientMessage(ctx, msg.getBody());
+                } catch(Exception e) {
+                    log.error(e.getLocalizedMessage(), e);
                 }
-                if (h.hasSessionId()) {
-                    sessionId = h.getSessionId();
-                }
-                ClientMessageContext ctx = new ClientMessageContext(SteamConnection.this, msg.getAppId(), h.getSourceJobId(), h.getTargetJobId());
-                selfHandledMessageDispatcher.handleClientMessage(ctx, msg.getBody());
-                messageHandler.handleClientMessage(ctx, msg.getBody());
             });
         }
 

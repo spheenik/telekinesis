@@ -167,7 +167,7 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
     }
 
     @Override
-    public void handleClientMessage(ClientMessageContext ctx, Object message) {
+    public void handleClientMessage(ClientMessageContext ctx, Object message) throws Exception {
         selfHandledMessageDispatcher.handleClientMessage(ctx, message);
         for (SteamClientModule module : modules) {
             module.handleClientMessage(ctx, message);
