@@ -1,19 +1,19 @@
 package telekinesis.connection;
 
-import io.netty.channel.EventLoopGroup;
+import io.netty.channel.EventLoop;
 import io.netty.util.concurrent.ScheduledFuture;
 
 import java.util.concurrent.TimeUnit;
 
 public abstract class IdleTimeoutFunction {
 
-    private final EventLoopGroup eventLoopGroup;
+    private final EventLoop eventLoop;
     private long timeoutNanos;
     private long lastPing;
     private ScheduledFuture<?> timeoutFunc;
 
-    public IdleTimeoutFunction(EventLoopGroup eventLoopGroup) {
-        this.eventLoopGroup = eventLoopGroup;
+    public IdleTimeoutFunction(EventLoop eventLoop) {
+        this.eventLoop = eventLoop;
         this.lastPing = 0L;
     }
 
@@ -37,7 +37,7 @@ public abstract class IdleTimeoutFunction {
     protected abstract void onTimout();
 
     private void schedule(TimeoutFunction function, long delay) {
-        timeoutFunc = eventLoopGroup.schedule(function, delay, TimeUnit.NANOSECONDS);
+        timeoutFunc = eventLoop.schedule(function, delay, TimeUnit.NANOSECONDS);
     }
 
     private class TimeoutFunction implements Runnable {

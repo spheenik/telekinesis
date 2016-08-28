@@ -51,7 +51,7 @@ public class SteamConnection extends Publisher<SteamConnection> {
     private final CombinedClientMessageTypeRegistry messageRegistry;
     private final ClientMessageHandler messageHandler;
     private final MessageDispatcher selfHandledMessageDispatcher;
-    private final IdleTimeoutFunction heartbeatFunction;
+    private IdleTimeoutFunction heartbeatFunction;
 
     private ConnectionState connectionState;
     private SocketChannel channel;
@@ -77,13 +77,6 @@ public class SteamConnection extends Publisher<SteamConnection> {
         connectionState = ConnectionState.DISCONNECTED;
 
         resetState();
-        this.heartbeatFunction = new IdleTimeoutFunction(workerGroup) {
-            @Override
-            protected void onTimout() {
-                SM_ClientServer.CMsgClientHeartBeat.Builder msg = SM_ClientServer.CMsgClientHeartBeat.newBuilder();
-                send(msg);
-            }
-        };
     }
 
     public void addRegistry(ClientMessageTypeRegistry registry) {
@@ -163,29 +156,22 @@ public class SteamConnection extends Publisher<SteamConnection> {
             if (messageLog.isTraceEnabled()) {
                 traceMessage("received", h.getSourceJobId(), h.getTargetJobId(), msg.getBody());
             }
-            workerGroup.submit(() -> {
-                try {
-                    log.info("received {}, sourceJobId={}, targetJobId={}", ClassUtil.packageRelativeClassName(msg.getBody()), h.getSourceJobId(), h.getTargetJobId());
-                    if (h.hasSteamId()) {
-                        steamId = h.getSteamId();
-                    }
-                    if (h.hasSessionId()) {
-                        sessionId = h.getSessionId();
-                    }
-                    ClientMessageContext ctx = new ClientMessageContext(SteamConnection.this, msg.getAppId(), h.getSourceJobId(), h.getTargetJobId());
-                    selfHandledMessageDispatcher.handleClientMessage(ctx, msg.getBody());
-                    messageHandler.handleClientMessage(ctx, msg.getBody());
-                } catch(Exception e) {
-                    log.error(e.getLocalizedMessage(), e);
-                }
-            });
+            log.info("received {}, sourceJobId={}, targetJobId={}", ClassUtil.packageRelativeClassName(msg.getBody()), h.getSourceJobId(), h.getTargetJobId());
+            if (h.hasSteamId()) {
+                steamId = h.getSteamId();
+            }
+            if (h.hasSessionId()) {
+                sessionId = h.getSessionId();
+            }
+            ClientMessageContext ctx = new ClientMessageContext(SteamConnection.this, msg.getAppId(), h.getSourceJobId(), h.getTargetJobId());
+            selfHandledMessageDispatcher.handleClientMessage(ctx, msg.getBody());
+            messageHandler.handleClientMessage(ctx, msg.getBody());
         }
 
         @Override
         public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
             log.error("Exception in pipeline", cause);
         }
-
     }
 
     public void send(Object body) {
@@ -204,30 +190,34 @@ public class SteamConnection extends Publisher<SteamConnection> {
         send(appId, -1L, targetJobId, body);
     }
 
-    protected void send(int appId, long sourceJobId, long targetJobId, Object body) {
-        heartbeatFunction.resetTimer();
-        log.info("sending {}, sourceJobId={}, targetJobId={}", ClassUtil.packageRelativeClassName(body), sourceJobId, targetJobId);
-        if (messageLog.isTraceEnabled()) {
-            traceMessage("sending", sourceJobId, targetJobId, body);
-        }
+    private void send(int appId, long sourceJobId, long targetJobId, Object body) {
+        channel.eventLoop().execute(() -> {
+            if (heartbeatFunction != null) {
+                heartbeatFunction.resetTimer();
+            }
+            log.info("sending {}, sourceJobId={}, targetJobId={}", ClassUtil.packageRelativeClassName(body), sourceJobId, targetJobId);
+            if (messageLog.isTraceEnabled()) {
+                traceMessage("sending", sourceJobId, targetJobId, body);
+            }
 
-        Class<? extends Header> headerClass = messageRegistry.getHeaderClassForBody(appId, body);
-        if (headerClass == null) {
-            throw new RuntimeException("don't now header class for body of class " + body.getClass().getName());
-        }
-        Header header;
-        try {
-            header = headerClass.newInstance();
-        } catch (Exception e) {
-            throw new RuntimeException("unable to create an instance of header class " + headerClass.getName(), e);
-        }
-        Message message = new Message(appId, header, body);
+            Class<? extends Header> headerClass = messageRegistry.getHeaderClassForBody(appId, body);
+            if (headerClass == null) {
+                throw new RuntimeException("don't now header class for body of class " + body.getClass().getName());
+            }
+            Header header;
+            try {
+                header = headerClass.newInstance();
+            } catch (Exception e) {
+                throw new RuntimeException("unable to create an instance of header class " + headerClass.getName(), e);
+            }
+            Message message = new Message(appId, header, body);
 
-        header.setSteamId(steamId);
-        header.setSessionId(sessionId);
-        header.setSourceJobId(sourceJobId);
-        header.setTargetJobId(targetJobId);
-        channel.writeAndFlush(message);
+            header.setSteamId(steamId);
+            header.setSessionId(sessionId);
+            header.setSourceJobId(sourceJobId);
+            header.setTargetJobId(targetJobId);
+            channel.writeAndFlush(message);
+        });
     }
 
     private void resetState() {
@@ -270,11 +260,21 @@ public class SteamConnection extends Publisher<SteamConnection> {
     }
 
     public void enableHeartbeat(int seconds) {
+        this.heartbeatFunction = new IdleTimeoutFunction(channel.eventLoop()) {
+            @Override
+            protected void onTimout() {
+                SM_ClientServer.CMsgClientHeartBeat.Builder msg = SM_ClientServer.CMsgClientHeartBeat.newBuilder();
+                send(msg);
+            }
+        };
         heartbeatFunction.enable(seconds);
     }
 
     public void disableHeartbeat() {
-        heartbeatFunction.disable();
+        if (heartbeatFunction != null) {
+            heartbeatFunction.disable();
+            heartbeatFunction = null;
+        }
     }
 
     private synchronized void traceMessage(String prefix, long sourceJobId, long targetJobId, Object body) {
