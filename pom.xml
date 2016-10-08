@@ -38,6 +38,11 @@
 			<artifactId>bcprov-ext-jdk14</artifactId>
 			<version>1.47</version>
 		</dependency>
+		<dependency>
+			<groupId>com.skadistats</groupId>
+			<artifactId>clarity</artifactId>
+			<version>2.2-SNAPSHOT</version>
+		</dependency>
 	</dependencies>
 
 </project>
