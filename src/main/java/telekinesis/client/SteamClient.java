@@ -2,8 +2,8 @@ package telekinesis.client;
 
 import com.google.protobuf.ByteString;
 import io.netty.channel.EventLoopGroup;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import skadistats.clarity.logger.Logger;
+import skadistats.clarity.logger.Logging;
 import telekinesis.client.module.GameConnectTokens;
 import telekinesis.client.module.SteamFriends;
 import telekinesis.connection.ClientMessageContext;
@@ -50,7 +50,7 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
 
     public SteamClient(EventLoopGroup workerGroup, String id, SteamClientDelegate credentials) {
         this.workerGroup = workerGroup;
-        this.log = LoggerFactory.getLogger(id);
+        this.log = Logging.getLogger(id);
         this.credentials = credentials;
         this.modules = new LinkedHashSet<>();
 
@@ -120,7 +120,7 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
     }
 
     protected void performLogon() throws IOException {
-        log.info("performing logon for {}", credentials.getAccountName());
+        log.info("performing logon for %s", credentials.getAccountName());
 
         changeClientState(SteamClientState.LOGGING_IN);
 

@@ -4,7 +4,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
-import org.slf4j.Logger;
+import skadistats.clarity.logger.Logger;
 
 import java.io.IOException;
 import java.nio.ByteOrder;
@@ -54,7 +54,7 @@ public class FrameCodec extends ChannelDuplexHandler {
         ByteBuf frame = ctx.alloc().heapBuffer(len).order(ByteOrder.LITTLE_ENDIAN);
         frame.writeBytes(bin, len);
         bin.discardReadBytes();
-        log.debug("received a frame with {} bytes", len + 8);
+        log.debug("received a frame with %d bytes", len + 8);
         ctx.fireChannelRead(frame);
     }
 
@@ -70,7 +70,7 @@ public class FrameCodec extends ChannelDuplexHandler {
         ctx.write(bout);
         ctx.write(out, promise);
 
-        log.debug("sent a frame with {} bytes", len + 8);
+        log.debug("sent a frame with %d bytes", len + 8);
     }
 
 }

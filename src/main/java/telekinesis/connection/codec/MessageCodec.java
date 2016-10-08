@@ -8,7 +8,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
-import org.slf4j.Logger;
+import skadistats.clarity.logger.Logger;
 import telekinesis.connection.Message;
 import telekinesis.message.ClientMessageTypeRegistry;
 import telekinesis.message.MessageFlag;
@@ -43,15 +43,15 @@ public class MessageCodec extends ChannelDuplexHandler {
         try {
             int type = in.readInt();
             if (!registry.knowsMessageType(AppId.STEAM, type)) {
-                log.info("no decoder for message type {}", EMsg.n(type & MessageFlag.MASK));
+                log.info("no decoder for message type %s", EMsg.n(type & MessageFlag.MASK));
                 in.skipBytes(in.readableBytes());
                 return;
             }
-            log.info("decoding a {}", EMsg.n(type & MessageFlag.MASK));
+            log.debug("decoding a %s", EMsg.n(type & MessageFlag.MASK));
             Header header = instantiateAndDecodeObject(registry.getHeaderClassForMessageType(AppId.STEAM, type), in);
             Object body = instantiateAndDecodeObject(registry.getBodyClassForMessageType(AppId.STEAM, type), in);
             if (in.readableBytes() != 0) {
-                log.debug("discarding {} extra bytes not decoded by message", in.readableBytes());
+                log.warn("discarding %d extra bytes not decoded by message", in.readableBytes());
                 in.skipBytes(in.readableBytes());
             }
             if (body instanceof SM_Base.CMsgMulti) {
@@ -60,13 +60,13 @@ public class MessageCodec extends ChannelDuplexHandler {
                 SM_ClientServer.CMsgGCClient gcBody = (SM_ClientServer.CMsgGCClient) body;
                 int payloadType = gcBody.getMsgtype() | MessageFlag.GC;
                 if (!registry.knowsMessageType(gcBody.getAppid(), payloadType)) {
-                    log.info("no decoder for GC payload type {} for app id {}", gcBody.getMsgtype() & MessageFlag.MASK, gcBody.getAppid());
+                    log.info("no decoder for GC payload type %d for app id %d", gcBody.getMsgtype() & MessageFlag.MASK, gcBody.getAppid());
                     return;
                 }
                 if ((gcBody.getMsgtype() & MessageFlag.PROTO) == 0) {
                     log.error("embedded GC has no proto header! Implement this!");
                 }
-                log.info("decoding GC payload type {} for app id {}", gcBody.getMsgtype() & MessageFlag.MASK, gcBody.getAppid());
+                log.info("decoding GC payload type %d for app id %d", gcBody.getMsgtype() & MessageFlag.MASK, gcBody.getAppid());
 
                 ByteBuf payloadBuf = Unpooled.wrappedBuffer(gcBody.getPayload().asReadOnlyByteBuffer()).order(ByteOrder.LITTLE_ENDIAN);
                 //log.info(ByteBufUtil.hexDump(payloadBuf));
@@ -99,7 +99,7 @@ public class MessageCodec extends ChannelDuplexHandler {
         InputStream is = multi.getMessageBody().newInput();
         int isSize = multi.getMessageBody().size();
         if (multi.getSizeUnzipped() > 0) {
-            log.debug("multi is zipped, unzipped size is {}", multi.getSizeUnzipped());
+            log.debug("multi is zipped, unzipped size is %d", multi.getSizeUnzipped());
             ZipInputStream zis = new ZipInputStream(is);
             zis.getNextEntry();
             is = zis;

@@ -11,8 +11,8 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import skadistats.clarity.logger.Logger;
+import skadistats.clarity.logger.Logging;
 import telekinesis.connection.codec.AESCodec;
 import telekinesis.connection.codec.FrameCodec;
 import telekinesis.connection.codec.MessageCodec;
@@ -65,8 +65,8 @@ public class SteamConnection extends Publisher<SteamConnection> {
 
     public SteamConnection(EventLoopGroup workerGroup, ClientMessageHandler messageHandler, String id) {
         this.workerGroup = workerGroup;
-        this.log = LoggerFactory.getLogger(id);
-        this.messageLog = LoggerFactory.getLogger(id + "-messages");
+        this.log = Logging.getLogger(id);
+        this.messageLog = Logging.getLogger(id + "-messages");
         this.messageRegistry = new CombinedClientMessageTypeRegistry(HANDLED_MESSAGES);
         this.messageHandler = messageHandler;
 
@@ -109,10 +109,10 @@ public class SteamConnection extends Publisher<SteamConnection> {
             public void operationComplete(ChannelFuture future) throws Exception {
                 if (future.isSuccess()) {
                     channel = (SocketChannel) future.channel();
-                    log.info("connected to peer {}", channel.remoteAddress());
+                    log.info("connected to peer %s", channel.remoteAddress());
                     changeConnectionState(ConnectionState.CONNECTED);
                 } else {
-                    log.info("connection attempt failed: {}", future.cause().getMessage());
+                    log.info("connection attempt failed: %s", future.cause().getMessage());
                     changeConnectionState(ConnectionState.CONNECTION_FAILED);
                 }
             }
@@ -156,7 +156,7 @@ public class SteamConnection extends Publisher<SteamConnection> {
             if (messageLog.isTraceEnabled()) {
                 traceMessage("received", h.getSourceJobId(), h.getTargetJobId(), msg.getBody());
             }
-            log.info("received {}, sourceJobId={}, targetJobId={}", ClassUtil.packageRelativeClassName(msg.getBody()), h.getSourceJobId(), h.getTargetJobId());
+            log.info("received %s, sourceJobId=%d, targetJobId=%d", ClassUtil.packageRelativeClassName(msg.getBody()), h.getSourceJobId(), h.getTargetJobId());
             if (h.hasSteamId()) {
                 steamId = h.getSteamId();
             }
@@ -170,7 +170,7 @@ public class SteamConnection extends Publisher<SteamConnection> {
 
         @Override
         public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-            log.error("Exception in pipeline", cause);
+            log.exception(cause);
         }
     }
 
@@ -195,7 +195,7 @@ public class SteamConnection extends Publisher<SteamConnection> {
             if (heartbeatFunction != null) {
                 heartbeatFunction.resetTimer();
             }
-            log.info("sending {}, sourceJobId={}, targetJobId={}", ClassUtil.packageRelativeClassName(body), sourceJobId, targetJobId);
+            log.info("sending %s, sourceJobId=%d, targetJobId=%d", ClassUtil.packageRelativeClassName(body), sourceJobId, targetJobId);
             if (messageLog.isTraceEnabled()) {
                 traceMessage("sending", sourceJobId, targetJobId, body);
             }
@@ -234,7 +234,7 @@ public class SteamConnection extends Publisher<SteamConnection> {
     }
 
     protected void handleChannelEncryptRequest(ClientMessageContext ctx, ChannelEncryptRequest in) throws IOException {
-        log.info("got encryption request for universe {}, protocol version {}", in.getUniverse(), in.getProtocolVersion());
+        log.info("handling encryption request for universe %s, protocol version %d", in.getUniverse(), in.getProtocolVersion());
         aesCodec = new AESCodec(in.getUniverse());
         ChannelEncryptResponse out = new ChannelEncryptResponse();
         out.setProtocolVersion(in.getProtocolVersion());
@@ -253,7 +253,7 @@ public class SteamConnection extends Publisher<SteamConnection> {
             );
             changeConnectionState(ConnectionState.ESTABLISHED);
         } else {
-            log.error("failed to establish encryption, server said '{}'", msg.getResult());
+            log.error("failed to establish encryption, server said '%s'", msg.getResult());
             changeConnectionState(ConnectionState.BROKEN);
         }
         aesCodec = null;
@@ -278,7 +278,7 @@ public class SteamConnection extends Publisher<SteamConnection> {
     }
 
     private synchronized void traceMessage(String prefix, long sourceJobId, long targetJobId, Object body) {
-        messageLog.trace("{} {}, sourceJobId={}, targetJobId={}", prefix, ClassUtil.packageRelativeClassName(body), sourceJobId, targetJobId);
+        messageLog.trace("%s %s, sourceJobId=%d, targetJobId=%d", prefix, ClassUtil.packageRelativeClassName(body), sourceJobId, targetJobId);
         messageLog.trace("");
         messageLog.trace(body.toString());
         messageLog.trace("-----------------------------------------------------------------------------------------------------");
