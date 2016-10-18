@@ -180,7 +180,7 @@ public class SteamConnection extends Publisher<SteamConnection> {
 
         @Override
         public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-            log.exception(cause);
+            log.error(cause);
         }
     }
 
