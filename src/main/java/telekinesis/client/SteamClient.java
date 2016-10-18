@@ -15,6 +15,7 @@ import telekinesis.model.AppId;
 import telekinesis.model.ClientMessageHandler;
 import telekinesis.model.SteamClientDelegate;
 import telekinesis.model.steam.EMsg;
+import telekinesis.model.steam.EOSType;
 import telekinesis.model.steam.EPersonaState;
 import telekinesis.model.steam.EResult;
 import telekinesis.util.MessageDispatcher;
@@ -35,7 +36,9 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
             .registerProto(EMsg.ClientAccountInfo.v(), SM_ClientServer.CMsgClientAccountInfo.class)
             .registerProto(EMsg.ClientNewLoginKey.v(), SM_ClientServer.CMsgClientNewLoginKey.class)
             .registerProto(EMsg.ClientNewLoginKeyAccepted.v(), SM_ClientServer.CMsgClientNewLoginKeyAccepted.class)
-            .registerProto(EMsg.ClientHeartBeat.v(), SM_ClientServer.CMsgClientHeartBeat.class);
+            .registerProto(EMsg.ClientHeartBeat.v(), SM_ClientServer.CMsgClientHeartBeat.class)
+            .registerProto(EMsg.ClientPlayingSessionState.v(), SM_ClientServer.CMsgClientPlayingSessionState.class)
+            .registerProto(EMsg.ClientGamesPlayedWithDataBlob.v(), SM_ClientServer.CMsgClientGamesPlayed.class);
 
     private final Logger log;
     private final EventLoopGroup workerGroup;
@@ -58,6 +61,7 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
         selfHandledMessageDispatcher.subscribe(SM_ClientServer.CMsgClientUpdateMachineAuth.class, this::handleClientUpdateMachineAuth);
         selfHandledMessageDispatcher.subscribe(SM_ClientServer.CMsgClientAccountInfo.class, this::handleClientAccountInfo);
         selfHandledMessageDispatcher.subscribe(SM_ClientServer.CMsgClientNewLoginKey.class, this::handleClientNewLoginKey);
+        selfHandledMessageDispatcher.subscribe(SM_ClientServer.CMsgClientPlayingSessionState.class, this::handleClientPlayingSessionState);
 
         clientState = SteamClientState.LOGGED_OFF;
 
@@ -140,6 +144,22 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
         connection.send(logon);
     }
 
+    public void startPlaying(int appId, String appName) {
+        SM_ClientServer.CMsgClientGamesPlayed.GamePlayed.Builder gp = SM_ClientServer.CMsgClientGamesPlayed.GamePlayed.newBuilder();
+        gp.setGameId((long) appId);
+        gp.setGameExtraInfo(appName);
+        SM_ClientServer.CMsgClientGamesPlayed.Builder msg = SM_ClientServer.CMsgClientGamesPlayed.newBuilder();
+        msg.addGamesPlayed(gp);
+        msg.setClientOsType(EOSType.Unknown.v());
+        connection.send(msg);
+    }
+
+    public void stopPlaying() {
+        SM_ClientServer.CMsgClientGamesPlayed.Builder msg = SM_ClientServer.CMsgClientGamesPlayed.newBuilder();
+        msg.setClientOsType(EOSType.Unknown.v());
+        connection.send(msg);
+    }
+
     private void changeClientState(SteamClientState newState) {
         if (clientState == newState) {
             return;
@@ -220,10 +240,13 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
         ctx.reply(response);
     }
 
+    private void handleClientPlayingSessionState(ClientMessageContext ctx, SM_ClientServer.CMsgClientPlayingSessionState msg) {
+        publish(this, msg);
+    }
+
     public int getPublicIp() {
         return publicIp;
     }
-
 
     public long getSteamId() {
         return connection.getSteamId();

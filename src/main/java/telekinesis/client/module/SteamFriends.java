@@ -23,7 +23,8 @@ public class SteamFriends extends SteamClientModule {
             .registerProto(EMsg.ClientFriendsList.v(), SM_ClientServer.CMsgClientFriendsList.class)
             .registerProto(EMsg.ClientPlayerNicknameList.v(), SM_ClientServer.CMsgClientPlayerNicknameList.class)
             .registerProto(EMsg.ClientFriendMsgIncoming.v(), SM_ClientServer.CMsgClientFriendMsgIncoming.class)
-            .registerProto(EMsg.ClientFriendMsg.v(), SM_ClientServer.CMsgClientFriendMsg.class);
+            .registerProto(EMsg.ClientFriendMsg.v(), SM_ClientServer.CMsgClientFriendMsg.class)
+            .registerProto(EMsg.ClientUDSInviteToGame.v(), SM_ClientServer.CMsgClientUDSInviteToGame.class);
 
     private final MessageDispatcher selfHandledMessageDispatcher;
 
@@ -34,6 +35,9 @@ public class SteamFriends extends SteamClientModule {
         selfHandledMessageDispatcher.subscribe(SM_ClientServer.CMsgClientFriendsList.class, this::handleClientFriendsList);
         selfHandledMessageDispatcher.subscribe(SM_ClientServer.CMsgClientPlayerNicknameList.class, this::handleClientPlayerNicknameList);
         selfHandledMessageDispatcher.subscribe(SM_ClientServer.CMsgClientFriendMsgIncoming.class, this::handleClientFriendMsgIncoming);
+        selfHandledMessageDispatcher.subscribe(SM_ClientServer.CMsgClientUDSInviteToGame.class, this::handleClientUDSInviteToGame);
+
+
     }
 
     @Override
@@ -64,31 +68,36 @@ public class SteamFriends extends SteamClientModule {
             case ChatMsg:
                 String in = CStringUtil.decodeUtf8(msg.getMessage());
                 String out = String.format("You said: %s", in);
-
-                SM_ClientServer.CMsgClientFriendMsg.Builder builder = SM_ClientServer.CMsgClientFriendMsg.newBuilder();
-                builder.setSteamid(msg.getSteamidFrom());
-                builder.setChatEntryType(EChatEntryType.ChatMsg.v());
-                builder.setMessage(CStringUtil.encodeUtf8(out));
-                builder.setRtime32ServerTimestamp((int) Instant.now().getEpochSecond());
-
-                steamClient.send(builder);
+                sendChat(msg.getSteamidFrom(), out);
                 break;
 
             case Typing:
                 break;
 
             case InviteGame:
+                sendChat(msg.getSteamidFrom(), "I was invited to a game");
                 break;
 
             case Emote:
                 break;
 
             case LobbyGameStart:
+                sendChat(msg.getSteamidFrom(), "I received a LobbyGameStart");
                 break;
 
             case LeftConversation:
+                sendChat(msg.getSteamidFrom(), "You left the conversation");
                 break;
         }
+    }
+
+    private void sendChat(long steamId, String msg) throws IOException {
+        SM_ClientServer.CMsgClientFriendMsg.Builder builder = SM_ClientServer.CMsgClientFriendMsg.newBuilder();
+        builder.setSteamid(steamId);
+        builder.setChatEntryType(EChatEntryType.ChatMsg.v());
+        builder.setMessage(CStringUtil.encodeUtf8(msg));
+        builder.setRtime32ServerTimestamp((int) Instant.now().getEpochSecond());
+        steamClient.send(builder);
     }
 
     public void setPersonaState(EPersonaState personaState) {
@@ -101,6 +110,12 @@ public class SteamFriends extends SteamClientModule {
 
     private void handleClientPersonaChangeResponse(ClientMessageContext clientMessageContext, SM_ClientServer.CMsgPersonaChangeResponse msg) {
     }
+
+    private void handleClientUDSInviteToGame(ClientMessageContext clientMessageContext, SM_ClientServer.CMsgClientUDSInviteToGame msg) {
+        System.out.println(msg);
+    }
+
+
 
 
 }
