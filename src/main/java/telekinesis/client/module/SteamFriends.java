@@ -95,7 +95,8 @@ public class SteamFriends extends SteamClientModule {
         SM_ClientServer.CMsgClientChangeStatus.Builder builder = SM_ClientServer.CMsgClientChangeStatus.newBuilder();
         builder.setPlayerName("tkbot");
         builder.setPersonaState(personaState.v());
-        steamClient.request(builder);
+        steamClient.request(builder, (ctx, payload) -> {
+        });
     }
 
     private void handleClientPersonaChangeResponse(ClientMessageContext clientMessageContext, SM_ClientServer.CMsgPersonaChangeResponse msg) {

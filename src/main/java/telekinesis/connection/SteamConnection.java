@@ -35,6 +35,8 @@ import telekinesis.util.MessageDispatcher;
 import telekinesis.util.Publisher;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class SteamConnection extends Publisher<SteamConnection> {
 
@@ -58,6 +60,9 @@ public class SteamConnection extends Publisher<SteamConnection> {
     private AESCodec aesCodec;
     private long steamId;
     private int sessionId;
+
+    private Map<Long, Handler<ClientMessageContext, ? extends Object>> callbackMap = new HashMap<>();
+    private long nextSourceJobId = 0L;
 
     public SteamConnection(EventLoopGroup workerGroup) {
         this(workerGroup, null, "conn-steam");
@@ -164,8 +169,13 @@ public class SteamConnection extends Publisher<SteamConnection> {
                 sessionId = h.getSessionId();
             }
             ClientMessageContext ctx = new ClientMessageContext(SteamConnection.this, msg.getAppId(), h.getSourceJobId(), h.getTargetJobId());
-            selfHandledMessageDispatcher.handleClientMessage(ctx, msg.getBody());
-            messageHandler.handleClientMessage(ctx, msg.getBody());
+            if (h.getTargetJobId() != -1) {
+                Handler<ClientMessageContext, Object> handler = (Handler<ClientMessageContext, Object>) callbackMap.remove(h.getTargetJobId());
+                handler.handle(ctx, msg.getBody());
+            } else {
+                selfHandledMessageDispatcher.handleClientMessage(ctx, msg.getBody());
+                messageHandler.handleClientMessage(ctx, msg.getBody());
+            }
         }
 
         @Override
@@ -182,8 +192,10 @@ public class SteamConnection extends Publisher<SteamConnection> {
         send(appId, -1L, -1L, body);
     }
 
-    public void request(int appId, long sourceJobId, Object body) {
-        send(appId, sourceJobId, -1L, body);
+    public <P> void request(int appId, Object body, Handler<ClientMessageContext, P> handler) {
+        long cid = nextSourceJobId++;
+        callbackMap.put(cid, handler);
+        send(appId, cid, -1L, body);
     }
 
     public void reply(int appId, long targetJobId, Object body) {
@@ -223,6 +235,7 @@ public class SteamConnection extends Publisher<SteamConnection> {
     private void resetState() {
         this.steamId = SteamId.DEFAULT;
         this.sessionId = 0;
+        this.callbackMap.clear();
     }
 
     private void changeConnectionState(ConnectionState newState) {

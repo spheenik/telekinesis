@@ -4,8 +4,9 @@ package telekinesis.client;
 import telekinesis.message.ClientMessageTypeRegistry;
 import telekinesis.model.AppId;
 import telekinesis.model.ClientMessageHandler;
+import telekinesis.util.Publisher;
 
-public abstract class SteamClientModule implements ClientMessageHandler {
+public abstract class SteamClientModule<C> extends Publisher<C> implements ClientMessageHandler {
 
     protected final int appId;
     protected SteamClient steamClient;

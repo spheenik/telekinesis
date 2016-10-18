@@ -46,7 +46,6 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
     private SteamConnection connection;
     private int publicIp;
     private SteamClientState clientState;
-    private long nextSourceJobId = 0L;
 
     public SteamClient(EventLoopGroup workerGroup, String id, SteamClientDelegate credentials) {
         this.workerGroup = workerGroup;
@@ -102,16 +101,19 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
     }
 
     public void send(Object body) {
-        connection.send(body);
+        send(AppId.STEAM, body);
     }
 
     public void send(int appId, Object body) {
         connection.send(appId, body);
     }
 
-    public void request(Object body) {
-        long jid = nextSourceJobId++;
-        connection.request(AppId.STEAM, jid, body);
+    public <P> void request(Object body, Handler<ClientMessageContext, P> callback) {
+        request(AppId.STEAM, body, callback);
+    }
+
+    public <P> void request(int appId, Object body, Handler<ClientMessageContext, P> callback) {
+        connection.request(appId, body, callback);
     }
 
     // TODO: only for testing, remove this
