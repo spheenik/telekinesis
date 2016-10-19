@@ -180,7 +180,7 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
             case CLOSED:
             case LOST:
                 changeClientState(SteamClientState.LOGGED_OFF);
-                connection = null;
+                //connection = null;
                 break;
 
             default:
