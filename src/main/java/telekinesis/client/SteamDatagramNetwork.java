@@ -16,6 +16,7 @@ import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -92,15 +93,15 @@ public class SteamDatagramNetwork {
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             int status = connection.getResponseCode();
             for (Map.Entry<String, List<String>> entry : connection.getHeaderFields().entrySet()) {
-                System.out.println(entry.getKey() + ": " + entry.getValue());
+                log.debug("%s: %s", entry.getKey(), entry.getValue());
             }
             int retrySeconds;
             if (status == 200) {
                 config = mapper.readValue(connection.getInputStream(), NetworkConfig.class);
-                delegate.writeFile(configFile, 0, ByteBuffer.wrap(mapper.writeValueAsString(config).getBytes("UTF-8")));
+                delegate.writeFile(configFile, 0, ByteBuffer.wrap(mapper.writeValueAsString(config).getBytes("UTF-8")), StandardOpenOption.TRUNCATE_EXISTING);
                 fetchFuture = eventLoop.schedule(this::readConfigFromWeb, 300L, TimeUnit.SECONDS);
                 Matcher m  = Pattern.compile("max-age=(\\d+)").matcher(connection.getHeaderField("Cache-Control"));
-                retrySeconds = m.find() ? Integer.valueOf(m.group(1)) + 1 : 300;
+                retrySeconds = m.find() ? Integer.valueOf(m.group(1)) + 10 : 300;
             } else {
                 log.warn("querying steam datagram relay config returned unexpected status %d", status);
                 retrySeconds = 300;
