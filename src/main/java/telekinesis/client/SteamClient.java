@@ -42,7 +42,8 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
 
     private final Logger log;
     private final EventLoopGroup workerGroup;
-    private final SteamClientDelegate credentials;
+    private final SteamClientDelegate delegate;
+    private final SteamDatagramNetwork datagramNetwork;
     private final MessageDispatcher selfHandledMessageDispatcher;
     private final Set<SteamClientModule> modules;
 
@@ -50,10 +51,11 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
     private int publicIp;
     private SteamClientState clientState;
 
-    public SteamClient(EventLoopGroup workerGroup, String id, SteamClientDelegate credentials) {
+    public SteamClient(EventLoopGroup workerGroup, String id, SteamClientDelegate delegate) {
         this.workerGroup = workerGroup;
         this.log = Logging.getLogger(id);
-        this.credentials = credentials;
+        this.delegate = delegate;
+        this.datagramNetwork = new SteamDatagramNetwork(workerGroup.next(), delegate);
         this.modules = new LinkedHashSet<>();
 
         selfHandledMessageDispatcher = new MessageDispatcher();
@@ -98,10 +100,12 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
 
     public void connect() {
         connection.connect("162.254.195.44", 27020);
+        datagramNetwork.connect();
     }
 
     public void disconnect() {
         connection.disconnect();
+        datagramNetwork.disconnect();
     }
 
     public void send(Object body) {
@@ -126,15 +130,15 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
     }
 
     protected void performLogon() throws IOException {
-        log.info("performing logon for %s", credentials.getAccountName());
+        log.info("performing logon for %s", delegate.getAccountName());
 
         changeClientState(SteamClientState.LOGGING_IN);
 
         SM_ClientServer.CMsgClientLogon.Builder logon = SM_ClientServer.CMsgClientLogon.newBuilder();
         logon.setProtocolVersion(65575);
-        logon.setAccountName(credentials.getAccountName());
-        logon.setPassword(credentials.getPassword());
-        byte[] sentrySha = credentials.getSentrySha1();
+        logon.setAccountName(delegate.getAccountName());
+        logon.setPassword(delegate.getPassword());
+        byte[] sentrySha = delegate.getSentrySha1();
         if (sentrySha != null) {
             logon.setEresultSentryfile(EResult.OK.v());
             logon.setShaSentryfile(ByteString.copyFrom(sentrySha));
@@ -217,8 +221,8 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
 
         SM_ClientServer.CMsgClientUpdateMachineAuthResponse.Builder builder = SM_ClientServer.CMsgClientUpdateMachineAuthResponse.newBuilder();
         try {
-            credentials.writeSentry(msg.getFilename(), msg.getOffset(), msg.getBytes());
-            builder.setShaFile(ByteString.copyFrom(credentials.getSentrySha1()));
+            delegate.writeFile(msg.getFilename(), msg.getOffset(), msg.getBytes().asReadOnlyByteBuffer());
+            builder.setShaFile(ByteString.copyFrom(delegate.getSentrySha1()));
             builder.setEresult(EResult.OK.v());
             builder.setCubwrote(msg.getCubtowrite());
             builder.setFilename(msg.getFilename());
@@ -255,4 +259,13 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
     public EventLoopGroup getWorkerGroup() {
         return workerGroup;
     }
+
+    public SteamClientDelegate getDelegate() {
+        return delegate;
+    }
+
+    public SteamDatagramNetwork getDatagramNetwork() {
+        return datagramNetwork;
+    }
+
 }
