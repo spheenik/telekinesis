@@ -43,7 +43,7 @@ public class MessageCodec extends ChannelDuplexHandler {
         try {
             int type = in.readInt();
             if (!registry.knowsMessageType(AppId.STEAM, type)) {
-                log.info("no decoder for message type %s", EMsg.n(type & MessageFlag.MASK));
+                log.debug("no decoder for message type %s", EMsg.n(type & MessageFlag.MASK));
                 in.skipBytes(in.readableBytes());
                 return;
             }
@@ -60,13 +60,13 @@ public class MessageCodec extends ChannelDuplexHandler {
                 SM_ClientServer.CMsgGCClient gcBody = (SM_ClientServer.CMsgGCClient) body;
                 int payloadType = gcBody.getMsgtype() | MessageFlag.GC;
                 if (!registry.knowsMessageType(gcBody.getAppid(), payloadType)) {
-                    log.info("no decoder for GC payload type %d for app id %d", gcBody.getMsgtype() & MessageFlag.MASK, gcBody.getAppid());
+                    log.debug("no decoder for GC payload type %d for app id %d", gcBody.getMsgtype() & MessageFlag.MASK, gcBody.getAppid());
                     return;
                 }
                 if ((gcBody.getMsgtype() & MessageFlag.PROTO) == 0) {
                     log.error("embedded GC has no proto header! Implement this!");
                 }
-                log.info("decoding GC payload type %d for app id %d", gcBody.getMsgtype() & MessageFlag.MASK, gcBody.getAppid());
+                log.debug("decoding GC payload type %d for app id %d", gcBody.getMsgtype() & MessageFlag.MASK, gcBody.getAppid());
 
                 ByteBuf payloadBuf = Unpooled.wrappedBuffer(gcBody.getPayload().asReadOnlyByteBuffer()).order(ByteOrder.LITTLE_ENDIAN);
                 //log.info(ByteBufUtil.hexDump(payloadBuf));

@@ -28,6 +28,8 @@ import java.util.Set;
 
 public class SteamClient extends Publisher<SteamClient> implements ClientMessageHandler {
 
+    private static final Logger log = PrintfLoggerFactory.getLogger("steam");
+
     private static final SimpleClientMessageTypeRegistry HANDLED_MESSAGES = new SimpleClientMessageTypeRegistry()
             .registerProto(EMsg.ClientLogon.v(), SM_ClientServer.CMsgClientLogon.class)
             .registerProto(EMsg.ClientLogOnResponse.v(), SM_ClientServer.CMsgClientLogonResponse.class)
@@ -40,7 +42,6 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
             .registerProto(EMsg.ClientPlayingSessionState.v(), SM_ClientServer.CMsgClientPlayingSessionState.class)
             .registerProto(EMsg.ClientGamesPlayedWithDataBlob.v(), SM_ClientServer.CMsgClientGamesPlayed.class);
 
-    private final Logger log;
     private final EventLoopGroup workerGroup;
     private final SteamClientDelegate delegate;
     private final SteamDatagramNetwork datagramNetwork;
@@ -51,9 +52,8 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
     private int publicIp;
     private SteamClientState clientState;
 
-    public SteamClient(EventLoopGroup workerGroup, String id, SteamClientDelegate delegate) {
+    public SteamClient(EventLoopGroup workerGroup, SteamClientDelegate delegate) {
         this.workerGroup = workerGroup;
-        this.log = PrintfLoggerFactory.getLogger(id);
         this.delegate = delegate;
         this.datagramNetwork = new SteamDatagramNetwork(workerGroup.next(), delegate);
         this.modules = new LinkedHashSet<>();
@@ -67,7 +67,7 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
 
         clientState = SteamClientState.LOGGED_OFF;
 
-        connection = new SteamConnection(workerGroup, this, log.getName() + ".conn");
+        connection = new SteamConnection(workerGroup, this);
         connection.addRegistry(HANDLED_MESSAGES);
         connection.subscribe(ConnectionState.class, this::handleConnectionStateChange);
 

@@ -27,7 +27,7 @@ import java.util.regex.Pattern;
 
 public class SteamDatagramNetwork {
 
-    private static final Logger log = PrintfLoggerFactory.getLogger("steam-datagram-network");
+    private static final Logger log = PrintfLoggerFactory.getLogger("steam.sdr");
 
     private static final String configFile = "network_config.json";
     private static final ObjectMapper mapper = new ObjectMapper();

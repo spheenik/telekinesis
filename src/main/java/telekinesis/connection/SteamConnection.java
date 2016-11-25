@@ -40,6 +40,9 @@ import java.util.Map;
 
 public class SteamConnection extends Publisher<SteamConnection> {
 
+    private static final Logger log = PrintfLoggerFactory.getLogger("steam.conn");
+    private static final Logger messageLog = PrintfLoggerFactory.getLogger("steam.conn.messages");
+
     private static final SimpleClientMessageTypeRegistry HANDLED_MESSAGES = new SimpleClientMessageTypeRegistry()
             .registerSimple(EMsg.ChannelEncryptRequest.v(), ChannelEncryptRequest.class)
             .registerSimple(EMsg.ChannelEncryptResponse.v(), ChannelEncryptResponse.class)
@@ -47,8 +50,6 @@ public class SteamConnection extends Publisher<SteamConnection> {
             .registerProto(EMsg.Multi.v(), SM_Base.CMsgMulti.class)
             .registerProto(EMsg.ClientFromGC.v(), SM_ClientServer.CMsgGCClient.class);
 
-    private final Logger log;
-    private final Logger messageLog;
     private final EventLoopGroup workerGroup;
     private final CombinedClientMessageTypeRegistry messageRegistry;
     private final ClientMessageHandler messageHandler;
@@ -65,13 +66,11 @@ public class SteamConnection extends Publisher<SteamConnection> {
     private long nextSourceJobId = 0L;
 
     public SteamConnection(EventLoopGroup workerGroup) {
-        this(workerGroup, null, "conn-steam");
+        this(workerGroup, null);
     }
 
-    public SteamConnection(EventLoopGroup workerGroup, ClientMessageHandler messageHandler, String id) {
+    public SteamConnection(EventLoopGroup workerGroup, ClientMessageHandler messageHandler) {
         this.workerGroup = workerGroup;
-        this.log = PrintfLoggerFactory.getLogger(id);
-        this.messageLog = PrintfLoggerFactory.getLogger(id + "-messages");
         this.messageRegistry = new CombinedClientMessageTypeRegistry(HANDLED_MESSAGES);
         this.messageHandler = messageHandler;
 
@@ -103,8 +102,8 @@ public class SteamConnection extends Publisher<SteamConnection> {
             @Override
             public void initChannel(SocketChannel ch) throws Exception {
                 ChannelPipeline pipeline = ch.pipeline();
-                pipeline.addLast(FrameCodec.class.getSimpleName(), new FrameCodec(log));
-                pipeline.addLast(MessageCodec.class.getSimpleName(), new MessageCodec(log, messageRegistry));
+                pipeline.addLast(FrameCodec.class.getSimpleName(), new FrameCodec(messageLog));
+                pipeline.addLast(MessageCodec.class.getSimpleName(), new MessageCodec(messageLog, messageRegistry));
                 pipeline.addLast(ConnectionHandler.class.getSimpleName(), new ConnectionHandler());
             }
         });
@@ -158,10 +157,7 @@ public class SteamConnection extends Publisher<SteamConnection> {
         @Override
         protected void channelRead0(ChannelHandlerContext channelHandlerContext, Message msg) throws Exception {
             Header h = msg.getHeader();
-            if (messageLog.isTraceEnabled()) {
-                traceMessage("received", h.getSourceJobId(), h.getTargetJobId(), msg.getBody());
-            }
-            log.info("received %s, sourceJobId=%d, targetJobId=%d", ClassUtil.packageRelativeClassName(msg.getBody()), h.getSourceJobId(), h.getTargetJobId());
+            logMessage("received", h.getSourceJobId(), h.getTargetJobId(), msg.getBody());
             if (h.hasSteamId()) {
                 steamId = h.getSteamId();
             }
@@ -207,10 +203,7 @@ public class SteamConnection extends Publisher<SteamConnection> {
             if (heartbeatFunction != null) {
                 heartbeatFunction.resetTimer();
             }
-            log.info("sending %s, sourceJobId=%d, targetJobId=%d", ClassUtil.packageRelativeClassName(body), sourceJobId, targetJobId);
-            if (messageLog.isTraceEnabled()) {
-                traceMessage("sending", sourceJobId, targetJobId, body);
-            }
+            logMessage("sending", sourceJobId, targetJobId, body);
 
             Class<? extends Header> headerClass = messageRegistry.getHeaderClassForBody(appId, body);
             if (headerClass == null) {
@@ -290,11 +283,13 @@ public class SteamConnection extends Publisher<SteamConnection> {
         }
     }
 
-    private synchronized void traceMessage(String prefix, long sourceJobId, long targetJobId, Object body) {
-        messageLog.trace("%s %s, sourceJobId=%d, targetJobId=%d", prefix, ClassUtil.packageRelativeClassName(body), sourceJobId, targetJobId);
-        messageLog.trace("");
-        messageLog.trace(body.toString());
-        messageLog.trace("-----------------------------------------------------------------------------------------------------");
+    private synchronized void logMessage(String prefix, long sourceJobId, long targetJobId, Object body) {
+        if (messageLog.isDebugEnabled()) {
+            messageLog.debug("%s %s, sourceJobId=%d, targetJobId=%d", prefix, ClassUtil.packageRelativeClassName(body), sourceJobId, targetJobId);
+        }
+        if (messageLog.isTraceEnabled()) {
+            messageLog.trace(body.toString());
+        }
     }
 
     public long getSteamId() {
