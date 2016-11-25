@@ -99,7 +99,6 @@ public class SteamDatagramNetwork {
             if (status == 200) {
                 config = mapper.readValue(connection.getInputStream(), NetworkConfig.class);
                 delegate.writeFile(configFile, 0, ByteBuffer.wrap(mapper.writeValueAsString(config).getBytes("UTF-8")), StandardOpenOption.TRUNCATE_EXISTING);
-                fetchFuture = eventLoop.schedule(this::readConfigFromWeb, 300L, TimeUnit.SECONDS);
                 Matcher m  = Pattern.compile("max-age=(\\d+)").matcher(connection.getHeaderField("Cache-Control"));
                 retrySeconds = m.find() ? Integer.valueOf(m.group(1)) + 10 : 300;
             } else {
