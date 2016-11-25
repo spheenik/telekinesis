@@ -2,13 +2,13 @@ package telekinesis.client;
 
 import com.google.protobuf.ByteString;
 import io.netty.channel.EventLoopGroup;
-import skadistats.clarity.logger.Logger;
-import skadistats.clarity.logger.Logging;
+import org.slf4j.Logger;
 import telekinesis.client.module.GameConnectTokens;
 import telekinesis.client.module.SteamFriends;
 import telekinesis.connection.ClientMessageContext;
 import telekinesis.connection.ConnectionState;
 import telekinesis.connection.SteamConnection;
+import telekinesis.logger.PrintfLoggerFactory;
 import telekinesis.message.SimpleClientMessageTypeRegistry;
 import telekinesis.message.proto.generated.steam.SM_ClientServer;
 import telekinesis.model.AppId;
@@ -53,7 +53,7 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
 
     public SteamClient(EventLoopGroup workerGroup, String id, SteamClientDelegate delegate) {
         this.workerGroup = workerGroup;
-        this.log = Logging.getLogger(id);
+        this.log = PrintfLoggerFactory.getLogger(id);
         this.delegate = delegate;
         this.datagramNetwork = new SteamDatagramNetwork(workerGroup.next(), delegate);
         this.modules = new LinkedHashSet<>();
@@ -67,7 +67,7 @@ public class SteamClient extends Publisher<SteamClient> implements ClientMessage
 
         clientState = SteamClientState.LOGGED_OFF;
 
-        connection = new SteamConnection(workerGroup, this, log.getName() + "-conn");
+        connection = new SteamConnection(workerGroup, this, log.getName() + ".conn");
         connection.addRegistry(HANDLED_MESSAGES);
         connection.subscribe(ConnectionState.class, this::handleConnectionStateChange);
 

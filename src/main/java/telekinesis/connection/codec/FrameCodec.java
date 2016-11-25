@@ -4,7 +4,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
-import skadistats.clarity.logger.Logger;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.nio.ByteOrder;

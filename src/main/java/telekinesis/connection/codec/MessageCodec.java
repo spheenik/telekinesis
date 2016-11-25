@@ -8,7 +8,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
-import skadistats.clarity.logger.Logger;
+import org.slf4j.Logger;
 import telekinesis.connection.Message;
 import telekinesis.message.ClientMessageTypeRegistry;
 import telekinesis.message.MessageFlag;

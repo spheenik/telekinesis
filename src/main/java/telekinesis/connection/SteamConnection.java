@@ -11,11 +11,11 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import skadistats.clarity.logger.Logger;
-import skadistats.clarity.logger.Logging;
+import org.slf4j.Logger;
 import telekinesis.connection.codec.AESCodec;
 import telekinesis.connection.codec.FrameCodec;
 import telekinesis.connection.codec.MessageCodec;
+import telekinesis.logger.PrintfLoggerFactory;
 import telekinesis.message.ClientMessageTypeRegistry;
 import telekinesis.message.CombinedClientMessageTypeRegistry;
 import telekinesis.message.SimpleClientMessageTypeRegistry;
@@ -70,8 +70,8 @@ public class SteamConnection extends Publisher<SteamConnection> {
 
     public SteamConnection(EventLoopGroup workerGroup, ClientMessageHandler messageHandler, String id) {
         this.workerGroup = workerGroup;
-        this.log = Logging.getLogger(id);
-        this.messageLog = Logging.getLogger(id + "-messages");
+        this.log = PrintfLoggerFactory.getLogger(id);
+        this.messageLog = PrintfLoggerFactory.getLogger(id + "-messages");
         this.messageRegistry = new CombinedClientMessageTypeRegistry(HANDLED_MESSAGES);
         this.messageHandler = messageHandler;
 
@@ -180,7 +180,7 @@ public class SteamConnection extends Publisher<SteamConnection> {
 
         @Override
         public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-            log.error(cause);
+            log.error("unhandled exception in steam connection", cause);
         }
     }
 

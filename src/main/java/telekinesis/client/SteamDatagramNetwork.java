@@ -3,8 +3,8 @@ package telekinesis.client;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.channel.EventLoop;
 import io.netty.util.concurrent.ScheduledFuture;
-import skadistats.clarity.logger.Logger;
-import skadistats.clarity.logger.Logging;
+import org.slf4j.Logger;
+import telekinesis.logger.PrintfLoggerFactory;
 import telekinesis.model.SteamClientDelegate;
 import telekinesis.model.datagram.DataCenter;
 import telekinesis.model.datagram.NetworkConfig;
@@ -27,7 +27,7 @@ import java.util.regex.Pattern;
 
 public class SteamDatagramNetwork {
 
-    private static final Logger log = Logging.getLogger("steam-datagram-network");
+    private static final Logger log = PrintfLoggerFactory.getLogger("steam-datagram-network");
 
     private static final String configFile = "network_config.json";
     private static final ObjectMapper mapper = new ObjectMapper();
@@ -77,12 +77,12 @@ public class SteamDatagramNetwork {
                 ByteBuffer buf = delegate.readFile(configFile, null, null);
                 config = mapper.readValue(Charset.forName("UTF-8").decode(buf).toString(), NetworkConfig.class);
             }
-        } catch (IOException e) {
-            log.error(e);
+        } catch (IOException er) {
+            log.error("reading config from cache failed", er);
             try {
                 delegate.deleteFile(configFile);
-            } catch (IOException e1) {
-                log.error(e1);
+            } catch (IOException ed) {
+                log.error("deleting cached config failed", ed);
             }
         }
     }
