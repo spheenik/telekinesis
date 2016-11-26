@@ -4,6 +4,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
+import io.netty.util.ReferenceCountUtil;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import telekinesis.model.steam.EUniverse;
 
@@ -12,7 +13,11 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.spec.IvParameterSpec;
 import java.io.IOException;
 import java.nio.ByteOrder;
-import java.security.*;
+import java.security.GeneralSecurityException;
+import java.security.Key;
+import java.security.KeyFactory;
+import java.security.PublicKey;
+import java.security.Security;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.HashMap;
 import java.util.Map;
@@ -78,8 +83,8 @@ public class AESCodec extends ChannelDuplexHandler {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        ByteBuf in = (ByteBuf) msg;
         try {
+            ByteBuf in = (ByteBuf) msg;
             cIv.init(Cipher.DECRYPT_MODE, aesKey);
 
             byte[] decryptedIv = cIv.doFinal(in.array(), in.arrayOffset(), BLOCK_SIZE);
@@ -92,14 +97,14 @@ public class AESCodec extends ChannelDuplexHandler {
 
             ctx.fireChannelRead(out);
         } finally {
-            in.release();
+            ReferenceCountUtil.release(msg);
         }
     }
 
     @Override
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
-        ByteBuf in = (ByteBuf) msg;
         try {
+            ByteBuf in = (ByteBuf) msg;
             cIv.init(Cipher.ENCRYPT_MODE, aesKey);
             cMain.init(Cipher.ENCRYPT_MODE, aesKey);
 
@@ -111,7 +116,7 @@ public class AESCodec extends ChannelDuplexHandler {
 
             ctx.write(out, promise);
         } finally {
-            in.release();
+            ReferenceCountUtil.release(msg);
         }
     }
 

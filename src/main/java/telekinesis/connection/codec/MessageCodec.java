@@ -8,6 +8,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
+import io.netty.util.ReferenceCountUtil;
 import org.slf4j.Logger;
 import telekinesis.connection.Message;
 import telekinesis.message.ClientMessageTypeRegistry;
@@ -39,8 +40,8 @@ public class MessageCodec extends ChannelDuplexHandler {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        ByteBuf in = (ByteBuf) msg;
         try {
+            ByteBuf in = (ByteBuf) msg;
             int type = in.readInt();
             if (!registry.knowsMessageType(AppId.STEAM, type)) {
                 log.debug("no decoder for message type %s", EMsg.n(type & MessageFlag.MASK));
@@ -78,7 +79,7 @@ public class MessageCodec extends ChannelDuplexHandler {
                 ctx.fireChannelRead(new Message(-1, header, body));
             }
         } finally {
-            in.release();
+            ReferenceCountUtil.release(msg);
         }
     }
 
@@ -105,14 +106,20 @@ public class MessageCodec extends ChannelDuplexHandler {
             is = zis;
             isSize = multi.getSizeUnzipped();
         }
-        ByteBuf buf = ctx.alloc().buffer(isSize).order(ByteOrder.LITTLE_ENDIAN);
-        while (isSize > 0) {
-            isSize -= buf.writeBytes(is, isSize);
-        }
-        while (buf.readableBytes() != 0) {
-            int size = buf.readInt();
-            buf.retain();
-            channelRead(ctx, buf.readSlice(size));
+        ByteBuf buf = null;
+        try {
+            buf = ctx.alloc().buffer(isSize).order(ByteOrder.LITTLE_ENDIAN);
+            while (isSize > 0) {
+                isSize -= buf.writeBytes(is, isSize);
+            }
+            while (buf.readableBytes() != 0) {
+                int size = buf.readInt();
+                ByteBuf inner = buf.readSlice(size);
+                ReferenceCountUtil.retain(inner);
+                channelRead(ctx, inner);
+            }
+        } finally {
+            ReferenceCountUtil.release(buf);
         }
     }
 

@@ -4,6 +4,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
+import io.netty.util.ReferenceCountUtil;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -28,15 +29,14 @@ public class FrameCodec extends ChannelDuplexHandler {
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        bin.release();
+        ReferenceCountUtil.release(bin);
         ctx.fireChannelInactive();
     }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        ByteBuf in = (ByteBuf) msg;
-        bin.writeBytes(in);
-        in.release();
+        bin.writeBytes((ByteBuf) msg);
+        ReferenceCountUtil.release(msg);
 
         int n = bin.readableBytes();
         if (n < 8) {
