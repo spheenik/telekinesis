@@ -22,8 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class SteamDatagramNetwork {
 
@@ -99,18 +97,39 @@ public class SteamDatagramNetwork {
             if (status == 200) {
                 config = mapper.readValue(connection.getInputStream(), NetworkConfig.class);
                 delegate.writeFile(configFile, 0, ByteBuffer.wrap(mapper.writeValueAsString(config).getBytes("UTF-8")), StandardOpenOption.TRUNCATE_EXISTING);
-                Matcher m  = Pattern.compile("max-age=(\\d+)").matcher(connection.getHeaderField("Cache-Control"));
-                retrySeconds = m.find() ? Math.min(10, Integer.valueOf(m.group(1)) + 10) : 300;
+                retrySeconds = 600;
             } else {
                 log.warn("querying steam datagram relay config returned unexpected status %d", status);
-                retrySeconds = 300;
+                retrySeconds = 60;
             }
             log.info("next fetch of steam datagram relay config in %d seconds.", retrySeconds);
             fetchFuture = eventLoop.schedule(this::readConfigFromWeb, retrySeconds, TimeUnit.SECONDS);
         } catch (Exception e) {
             log.info("getting network_config.json from steam failed: %s", e.getMessage());
-            fetchFuture = eventLoop.schedule(this::readConfigFromWeb, 300L, TimeUnit.SECONDS);
+            fetchFuture = eventLoop.schedule(this::readConfigFromWeb, 60, TimeUnit.SECONDS);
         }
+    }
+    
+    public static int stringToIntId(String value) {
+        int r = 0;
+        for (char c : value.toCharArray()) {
+            r = (r << 8) | (c & 0xFF);
+        }
+        return r;
+    }
+
+    public static String intToStringId(int value) {
+        String result = "";
+        while (value != 0) {
+            result = ((char)(value & 0xFF)) + result;
+            value >>>= 8;
+        }
+        return result;
+    }
+
+    public static void main(String[] args) {
+        System.out.println(stringToIntId("vie"));
+        System.out.println(intToStringId(7760229));
     }
 
 }
